@@ -4,6 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
+import datetime
 
 '''
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All')
@@ -40,15 +41,18 @@ alltrips = alltrips[(alltrips['Duration'] > 60) & (alltrips['Duration'] < 60 * 6
 print('Delete: ' + str(raw_length - len(alltrips)))
 # sns.distplot(alltrips['Duration'])
 
-# Start Year
+# Daily count
 alltrips['startyear'] = alltrips['starttime'].dt.year
 alltrips['startmonth'] = alltrips['starttime'].dt.month
 alltrips['startdate'] = alltrips['starttime'].dt.date
 month_count = alltrips.groupby(['startyear', 'startmonth']).count()['trip_id'].reset_index()
-month_count = month_count.sort_values(by=['startyear', 'startmonth'])
-plt.plot(month_count['trip_id'], '-o')
-
-# Daily
 Day_count = alltrips.groupby(['startdate']).count()['trip_id'].reset_index()
 plt.plot(Day_count['trip_id'], '-')
 
+# Merge with station info
+
+# Merge with Weather
+
+# Merge with holidays
+
+# Output to BSTS
