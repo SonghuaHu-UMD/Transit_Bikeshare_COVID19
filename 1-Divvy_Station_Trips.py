@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import glob
 
+'''
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All')
 all_files = glob.glob('*.csv')
 alltrips = pd.DataFrame()
@@ -26,3 +26,29 @@ for jj in all_files:
     tem['starttime'] = pd.to_datetime(tem['starttime'])
     tem['stoptime'] = pd.to_datetime(tem['stoptime'])
     alltrips = alltrips.append(tem)
+alltrips.to_pickle('alltrips.chicago_202007')
+'''
+os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
+alltrips = pd.read_pickle(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All\alltrips.chicago_202007')
+raw_length = len(alltrips)
+alltrips.info()
+alltrips.isnull().sum()
+
+# Duration
+alltrips['Duration'] = (alltrips['stoptime'] - alltrips['starttime']).dt.total_seconds()
+alltrips = alltrips[(alltrips['Duration'] > 60) & (alltrips['Duration'] < 60 * 60 * 6)].reset_index(drop=True)
+print('Delete: ' + str(raw_length - len(alltrips)))
+# sns.distplot(alltrips['Duration'])
+
+# Start Year
+alltrips['startyear'] = alltrips['starttime'].dt.year
+alltrips['startmonth'] = alltrips['starttime'].dt.month
+alltrips['startdate'] = alltrips['starttime'].dt.date
+month_count = alltrips.groupby(['startyear', 'startmonth']).count()['trip_id'].reset_index()
+month_count = month_count.sort_values(by=['startyear', 'startmonth'])
+plt.plot(month_count['trip_id'], '-o')
+
+# Daily
+Day_count = alltrips.groupby(['startdate']).count()['trip_id'].reset_index()
+plt.plot(Day_count['trip_id'], '-')
+
