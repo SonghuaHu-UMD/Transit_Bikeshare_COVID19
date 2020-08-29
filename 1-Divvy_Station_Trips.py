@@ -59,7 +59,13 @@ alltrips = alltrips[
     drop=True)
 alltrips.isnull().sum()
 Day_count = alltrips.groupby(['from_station_id', 'startdate']).count()['trip_id'].reset_index()
-Day_count = Day_count[Day_count.startdate.notnull()].reset_index(drop=True)
+Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
+# Range the date
+Day_count = Day_count.set_index('startdate').groupby(['from_station_id']).resample('d')[
+    ['trip_id']].asfreq().reset_index()
+Day_count = Day_count.sort_values(by=['from_station_id', 'startdate'])
+Day_count.isnull().sum()
+Day_count = Day_count.fillna(0)
 '''
 # Read Station in 2016-2017, to get online data
 Stations_online = pd.DataFrame()
@@ -90,7 +96,6 @@ All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
 All_Station_Need.columns = ['from_station_id', 'from_station_lon', 'from_station_lat', 'from_station_capacity']
 Day_count = Day_count.merge(All_Station_Need, on='from_station_id')
 Day_count = Day_count.sort_values(by=['from_station_id', 'startdate']).reset_index(drop=True)
-Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 
 '''
 # Merge with Weather
@@ -185,10 +190,10 @@ Day_count['Holidays'] = 0
 Day_count.loc[Day_count['startdate'].isin(holidays), 'Holidays'] = 1
 
 # Output to BSTS
-Day_count.to_csv('Day_count_Divvy.csv')
+Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy.csv')
 Day_count.columns
 # Total count
 All_Day_count = Day_count.groupby(['startdate']).sum()['trip_id'].reset_index()
 All_Others = Day_count.groupby(['startdate']).median()[['PRCP', 'TMAX', 'TMIN', 'Holidays']].reset_index()
 All_Day_count = All_Day_count.merge(All_Others, on='startdate')
-All_Day_count.to_csv('All_Day_count_Divvy.csv')
+All_Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Day_count_Divvy.csv')
