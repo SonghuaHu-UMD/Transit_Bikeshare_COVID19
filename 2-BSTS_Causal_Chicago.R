@@ -16,11 +16,11 @@ library(zoo)
 library(bsts)
 library(dplyr)
 
-# One time-series
+# One time-series for all stations
 dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\All_Day_count_Divvy.csv') # Daily_Lstaion_Final_0806.csv
 dat$startdate <- as.Date(dat$startdate)
 rownames(dat) <- NULL
-first_enforce_day <- as.numeric(rownames(dat[dat$startdate == as.Date('2020-03-02'),]))
+first_enforce_day <- as.numeric(rownames(dat[dat$startdate == as.Date('2020-03-13'),]))
 pre.period <- c(1, first_enforce_day - 1)
 post.period <- c(first_enforce_day, nrow(dat))
 # We keep a copy of the actual observed response in "post.period.response
@@ -67,6 +67,9 @@ components.withreg$Response <- impact$series$response
 components.withreg$Predict_Lower <- impact$series$point.pred.lower
 components.withreg$Predict_Upper <- impact$series$point.pred.upper
 components.withreg$Raw_Response <- dat$trip_id
+components.withreg$Cum_effect <- impact$series$cum.effect
+components.withreg$Cum_effect_Lower <- impact$series$cum.effect.lower
+components.withreg$Cum_effect_Upper <- impact$series$cum.effect.upper
 #plot(impact$series$response)
 #plot(components.withreg$Raw_Response)
 components.withreg <- melt(components.withreg, id.vars = "Date")
@@ -86,10 +89,13 @@ ggplot(data = components.withreg, aes(x = Date, y = Value)) +
 # Coefficient
 colMeans(bsts.model1$coefficients)
 plot(bsts.model1, "coef")
-components.withreg$CTNAME <- eachstation
+#components.withreg$CTNAME <- eachstation
 
-
-AllCounty <- unique(dat$station_id)
+# Build the BSTS for all stations
+# Get prediction result
+dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Day_count_Divvy_dropOutlier.csv') # Daily_Lstaion_Final_0806.csv
+dat$startdate <- as.Date(dat$startdate)
+AllStation <- unique(dat$from_station_id)
 # Setup parallel backend
 cores <- detectCores()
 cl <- makeCluster(cores[1] - 1)
@@ -99,29 +105,29 @@ finalMatrix <- data.frame()
 # length(AllCounty)-1800
 finalMatrix <-
   foreach(
-    ccount = 1:(length(AllCounty)),
+    ccount = 1:(length(AllStation)),
     .combine = rbind,
     .packages = c("CausalImpact", "reshape2", "lattice", "ggplot2", "forecast")
   ) %dopar%
   {
-    eachstation <- AllCounty[ccount]
+    eachstation <- AllStation[ccount]
     # eachstation <- 40440
     # eachstation <- 40090
     print(ccount)
-    dat_Each <- dat[dat$station_id == eachstation,]
+    dat_Each <- dat[dat$from_station_id == eachstation,]
     rownames(dat_Each) <- NULL
-    first_enforce_day <- as.numeric(rownames(dat_Each[dat_Each$date == as.Date('2020-03-02'),]))
+    first_enforce_day <- as.numeric(rownames(dat_Each[dat_Each$startdate == as.Date('2020-03-13'),]))
     pre.period <- c(1, first_enforce_day - 1)
     post.period <- c(first_enforce_day, nrow(dat_Each))
     # We keep a copy of the actual observed response in "post.period.response
-    post.period.response <- dat_Each$rides[post.period[1]:post.period[2]]
-    dat_Each$rides[post.period[1]:post.period[2]] <- NA
-    response <- zoo(dat_Each$rides, dat_Each$date)
+    post.period.response <- dat_Each$trip_id[post.period[1]:post.period[2]]
+    dat_Each$trip_id[post.period[1]:post.period[2]] <- NA
+    response <- zoo(dat_Each$trip_id, dat_Each$startdate)
     #plot(response)
     # drop outliers
     response_cl <- tsclean(response, replace.missing = TRUE, lambda = NULL)
     response_cl[post.period[1]:post.period[2]] <- NA
-    response <- zoo(response_cl, dat_Each$date)
+    response <- zoo(response_cl, dat_Each$startdate)
     #plot(response1)
 
     # Build a bsts model
@@ -129,7 +135,7 @@ finalMatrix <-
     ss <- AddSeasonal(ss, response, nseasons = 7)
     ss <- AddMonthlyAnnualCycle(ss, response)
     bsts.model1 <- bsts(
-      response ~ PRCP + TMAX + IsWeekend + Holidays,
+      response ~ PRCP + TMAX + Holidays,
       state.specification = ss, niter = 2000, data = dat_Each, expected.model.size = 2)
     #plot(bsts.model1)
     #plot(bsts.model1, "components") + scale_x_date(date_breaks = "1 month", labels = date_format("%b-%Y"), limits = as.Date(c('2019-01-01', '2020-05-01')))
@@ -151,13 +157,16 @@ finalMatrix <-
       colMeans(bsts.model1$state.contributions[-(1:burn), "seasonal.7.1",]),
       colMeans(bsts.model1$state.contributions[-(1:burn), "Monthly",]),
       colMeans(bsts.model1$state.contributions[-(1:burn), "regression",]),
-      as.Date((dat_Each$date)))
+      as.Date((dat_Each$startdate)))
     names(components.withreg) <- c("Trend", "Seasonality", "Monthly", "Regression", "Date")
     components.withreg$Predict <- impact$series$point.pred
     components.withreg$Response <- impact$series$response
     components.withreg$Predict_Lower <- impact$series$point.pred.lower
     components.withreg$Predict_Upper <- impact$series$point.pred.upper
-    components.withreg$Raw_Response <- dat_Each$rides
+    components.withreg$Raw_Response <- dat_Each$trip_id
+    components.withreg$Cum_effect <- impact$series$cum.effect
+    components.withreg$Cum_effect_Lower <- impact$series$cum.effect.lower
+    components.withreg$Cum_effect_Upper <- impact$series$cum.effect.upper
     #plot(impact$series$response)
     #plot(components.withreg$Raw_Response)
     components.withreg <- melt(components.withreg, id.vars = "Date")
@@ -173,17 +182,15 @@ finalMatrix <-
     #  guides(colour = FALSE) +
     #  scale_x_date(date_breaks = "12 month", labels = date_format("%b-%Y")) +
     #  theme(axis.text.x = element_text(angle = -30, hjust = 0))
-    #, limits = as.Date(c('2010-01-01', '2020-05-01'))
     # Coefficient
     #colMeans(bsts.model1$coefficients)
     #plot(bsts.model1, "coef")
-    components.withreg$CTNAME <- eachstation
+    components.withreg$stationid <- eachstation
     components.withreg
     #write.csv(components.withreg, 'finalMatrix_Transit_temp.csv')
   }
-
 stopCluster(cl)
-write.csv(finalMatrix, 'finalMatrix_Transit_0810.csv')
+write.csv(finalMatrix, 'finalMatrix_Divvy_0906.csv')
 
 GetInclusionProbabilities <- function(bsts.object) {
   # Pulls code from
@@ -206,8 +213,7 @@ cores <- detectCores()
 cl <- makeCluster(cores[1] - 1)
 registerDoParallel(cl)
 finalMatrix <- data.frame()
-
-
+AllStation <- unique(dat$from_station_id)
 # length(AllCounty)-1800
 finalMatrix <-
   foreach(
@@ -216,11 +222,11 @@ finalMatrix <-
     .packages = c("CausalImpact", "reshape2", "lattice", "ggplot2", "forecast")
   ) %dopar%
   {
-    eachstation <- AllCounty[ccount]
+    eachstation <- AllStation[ccount]
     # eachstation <- 40440
     # eachstation <- 40090
     print(ccount)
-    dat_Each <- dat[dat$station_id == eachstation,]
+    dat_Each <- dat[dat$from_station_id == eachstation,]
     rownames(dat_Each) <- NULL
     first_enforce_day <- as.numeric(rownames(dat_Each[dat_Each$date == as.Date('2020-03-13'),]))
     pre.period <- c(1, first_enforce_day - 1)
@@ -265,7 +271,6 @@ stopCluster(cl)
 write.csv(finalMatrix, 'finalCoeff_Transit_0810.csv')
 
 # Causal impact
-
 # Setup parallel backend
 cores <- detectCores()
 cl <- makeCluster(cores[1] - 1)
