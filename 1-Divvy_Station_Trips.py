@@ -201,7 +201,7 @@ All_Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Day_count_Di
 
 # Plot the figure for each station
 Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy.csv', index_col=0)
-Day_count['startdate'] = pd.to_datetime(All_Day_count['startdate'])
+Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 # All_Day_count.columns
 for jj in list(set(Day_count['from_station_id'])):
     tem = Day_count[Day_count['from_station_id'] == jj]
@@ -223,3 +223,12 @@ Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 3
 len(Not_Need_ID)
 Day_count = Day_count[~Day_count['from_station_id'].isin(Not_Need_ID)].reset_index(drop=True)
 Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')
+
+# For ARCGIS
+Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')
+Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
+Day_count_2019 = Day_count[Day_count['startdate'].dt.year == 2019]
+Day_count_2019.columns
+Day_count_2019 = Day_count_2019.groupby(['from_station_id']).mean()[
+    ['trip_id', 'from_station_lon', 'from_station_lat']].reset_index()
+Day_count_2019.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_2019.csv')
