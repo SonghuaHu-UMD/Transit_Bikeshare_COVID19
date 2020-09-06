@@ -8,6 +8,7 @@ import datetime
 import json
 import requests
 from pandas.tseries.holiday import USFederalHolidayCalendar
+import matplotlib.dates as mdates
 
 '''
 # Read all trips
@@ -197,3 +198,28 @@ All_Day_count = Day_count.groupby(['startdate']).sum()['trip_id'].reset_index()
 All_Others = Day_count.groupby(['startdate']).median()[['PRCP', 'TMAX', 'TMIN', 'Holidays']].reset_index()
 All_Day_count = All_Day_count.merge(All_Others, on='startdate')
 All_Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Day_count_Divvy.csv')
+
+# Plot the figure for each station
+All_Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy.csv', index_col=0)
+All_Day_count['startdate'] = pd.to_datetime(All_Day_count['startdate'])
+# All_Day_count.columns
+for jj in list(set(All_Day_count['from_station_id'])):
+    tem = All_Day_count[All_Day_count['from_station_id'] == jj]
+    tem = tem.set_index('startdate')
+    # Find
+    fig, ax = plt.subplots(figsize=(12, 6), nrows=1, ncols=1)
+    ax.plot(tem['trip_id'], color='k')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=20))
+    plt.tight_layout()
+    plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Time-series-All\\' + str(jj) + '.png')
+    plt.close()
+
+# Some Stations should be dropped
+Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 398, 399, 400, 407, 408, 409, 411, 412,
+               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524, 528, 529,
+               530, 531, 532, 533, 534, 535, 536, 537] + list(range(538, 559)) \
+              + [593, 594, 595, 642, 646, 647, 648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683]
+len(Not_Need_ID)
+All_Day_count = All_Day_count[~All_Day_count['from_station_id'].isin(Not_Need_ID)].reset_index(drop=True)
+All_Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')

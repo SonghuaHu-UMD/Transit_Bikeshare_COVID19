@@ -45,6 +45,9 @@ impact <- CausalImpact(
   bsts.model = bsts.model1,
   post.period.response = post.period.response)
 plot(impact)
+summary(impact, "report")
+Impact_Value <- data.frame(impact$series)
+Impact_Value$Date <- dat$startdate
 impact.plot <- plot(impact) +
   theme_bw(base_size = 20) +
   scale_x_date(date_breaks = "1 month", labels = date_format("%b-%Y"), limits = as.Date(c('2019-01-01', '2020-08-01')))
