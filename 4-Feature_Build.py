@@ -84,6 +84,7 @@ Socid_Raw['White'] = Socid_Raw['AJWNE002']
 Socid_Raw['Black'] = Socid_Raw['AJWNE003']
 Socid_Raw['Indian'] = Socid_Raw['AJWNE004']
 Socid_Raw['Asian'] = Socid_Raw['AJWNE005']
+
 # Percentage
 for each in ['Male', 'Age_0_24', 'Age_25_40', 'Age_40_65', 'Age_65_', 'White', 'Black', 'Indian', 'Asian']:
     Socid_Raw['Pct.' + each] = Socid_Raw[each] / Socid_Raw['Total_Population']
@@ -98,6 +99,9 @@ Socid_Raw['Income'] = Socid_Raw["AJZAE001"]
 Socid_Raw['Pct.Car'] = Socid_Raw['AJXCE002'] / Socid_Raw['AJXCE001']
 Socid_Raw['Pct.Transit'] = Socid_Raw['AJXCE010'] / Socid_Raw['AJXCE001']
 Socid_Raw['Pct.WorkHome'] = Socid_Raw['AJXCE021'] / Socid_Raw['AJXCE001']
+Socid_Raw['Pct.Bicycle'] = Socid_Raw['AJXCE018'] / Socid_Raw['AJXCE001']
+Socid_Raw['Pct.Walk'] = Socid_Raw['AJXCE019'] / Socid_Raw['AJXCE001']
+
 # Education
 Socid_Raw['College'] = (Socid_Raw['AJYPE022'] + Socid_Raw['AJYPE023'] + Socid_Raw['AJYPE024'] + Socid_Raw['AJYPE025']) / \
                        Socid_Raw['AJYPE001']
@@ -105,7 +109,7 @@ Socid_Raw['College'] = (Socid_Raw['AJYPE022'] + Socid_Raw['AJYPE023'] + Socid_Ra
 Socid_Raw = Socid_Raw[
     ['Pct.Male', 'Pct.Age_0_24', 'Pct.Age_25_40', 'Pct.Age_40_65', 'Pct.White', 'Pct.Black', 'Pct.Indian', 'Pct.Asian',
      'Pct.Unemploy', 'Total_Population', 'GEOID', 'Income', 'Employed', 'College', 'Pct.Car', 'Pct.Transit',
-     'Pct.WorkHome', 'AREA', 'from_stati']]
+     'Pct.Bicycle', 'Pct.Walk', 'Pct.WorkHome', 'AREA', 'from_stati']]
 # Socid_Raw.isnull().sum()
 # fill na: 40890 40930
 Socid_Raw_Final = Socid_Raw.fillna(Socid_Raw.mean())
@@ -216,7 +220,7 @@ SInRoadBike = gpd.overlay(SInRoadBike, Buffer_S, how='intersection')
 SInRoadBike['Length'] = SInRoadBike['geometry'].length
 SInRoad_BikeLength = SInRoadBike.groupby(['from_stati']).sum()['Length'].reset_index()
 SInRoad_BikeLength.columns = ['from_stati', 'Bike_Route']
-SInRoad_BikeLength['All_Road_Length'] = (SInRoad_BikeLength['Bike_Route'] * 0.000621371) / (
+SInRoad_BikeLength['Bike_Route'] = (SInRoad_BikeLength['Bike_Route'] * 0.000621371) / (
         3.1415926 * (Buffer_V * 0.000621371) * (Buffer_V * 0.000621371))
 
 # Read job density
@@ -304,22 +308,39 @@ Bike_Rider = SInBike.groupby('from_stati_left').sum()[['trip_id']].reset_index()
 Bike_Rider.columns = ['from_stati', 'Near_bike_pickups']
 
 # Distance to city center
-
+# Station 35 as city center
+Distance_City_Center = Station.copy()
+Distance_City_Center['Distance_City'] = [
+    x.distance(list(Distance_City_Center.loc[Distance_City_Center['from_stati'] == 35, 'geometry'])[0]) for x in
+    Distance_City_Center['geometry']]
+Distance_City_Center = Distance_City_Center[['from_stati', 'Distance_City']]
 
 # Merge all data
-dfs = [Road_Length_With_Type, LandUse_Area_PCT_Final, LUM, StationZIP, Socid_Raw_Final, W_Job]
-All_final = reduce(lambda left, right: pd.merge(left, right, on='from_stati'), dfs)
+dfs = [Socid_Raw_Final, StationZIP, LandUse_Area_PCT_Final, Road_Length_With_Type, SInRoad_BikeLength, W_Job,
+       Numofbusstop, Bus_Rider, Distance_Bus, NumofRailstop, Rail_Rider, Distance_Rail, Numofbikestation,
+       Numofbikecapacity, Distance_Bike, Bike_Rider, Distance_City_Center]
+All_final = reduce(lambda left, right: pd.merge(left, right, on='from_stati', how='outer'), dfs)
 All_final.isnull().sum()
 All_final.describe().T
 
-# Change unit
+# Change unit and fill na
+All_final = All_final.fillna(0)
 All_final['PopDensity'] = (All_final['Total_Population'] / 1e3) / All_final['AREA']
 All_final['Income'] = All_final['Income'] / 1e3
 All_final['Cumu_Cases'] = All_final['Cumu_Cases'] / 1e3
 All_final['Cumu_Death'] = All_final['Cumu_Death'] / 1e3
 All_final['EmployDensity'] = (All_final['Employed'] / 1e3) / All_final['AREA']
+All_final['Distance_City'] = All_final['Distance_City'] * 0.000621371
+All_final['Distance_Bikestation'] = All_final['Distance_Bikestation'] * 0.000621371
+All_final['Distance_Rail'] = All_final['Distance_Rail'] * 0.000621371
+All_final['Distance_Busstop'] = All_final['Distance_Busstop'] * 0.000621371
+All_final['rides'] = All_final['rides'] / 1e3
+All_final['boardings'] = All_final['boardings'] / 1e3
+All_final['alightings'] = All_final['alightings'] / 1e3
+All_final.describe().T
+
 # Output
-All_final.to_csv('D:\Transit\Features_Transit_0822.csv')
+All_final.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv')
 ################## Calculate all land use/socio-demograhic/road/cases related features ##############################
 
 ################## Calculate all land use/socio-demograhic/road/cases related features ##############################
