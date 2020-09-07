@@ -101,7 +101,7 @@ for jj in set(Results_All['stationid']):
     plt.close()
 
 # Plot the zoom in figure
-jj = 40930
+jj = 2
 myFmt = mdates.DateFormatter('%b-%d')
 Temp_time = Results_All[Results_All['stationid'] == jj]
 Temp_time = Temp_time[Temp_time['Date'] >= '2020-01-01']
@@ -137,28 +137,29 @@ plt.savefig('FIG2-2.svg')
 
 # Calculate the casual impact
 # For build the PLS model
-Impact = pd.read_csv(r'D:\Transit\finalMatrix_Transit.csv', index_col=0)
-Impact['time'] = pd.to_datetime(Impact['time'])
-Impact = Impact.reset_index(drop=True)
-Impact.rename(columns={'stationid': 'station_id'}, inplace=True)
-Impact_0302 = Impact[Impact['time'] >= datetime.datetime(2020, 3, 2)]
+Impact = pd.pivot_table(Results_All, values='Value', index=['Date', 'stationid'],
+                        columns=['Component']).reset_index()
+Impact_0312 = Impact[Impact['Date'] >= datetime.datetime(2020, 3, 12)]
 # Calculate the relative impact
-Impact_0302['Relative_Impact'] = (Impact_0302['point.effect'] / Impact_0302['point.pred'])
-Impact_0302['Relative_Impact_lower'] = (Impact_0302['point.effect.lower'] / Impact_0302['point.pred.lower'])
-Impact_0302['Relative_Impact_upper'] = (Impact_0302['point.effect.upper'] / Impact_0302['point.pred.upper'])
-Impact_Sta = Impact_0302.groupby(['station_id']).mean()['Relative_Impact'].reset_index()
+Impact_0312['Relative_Impact'] = ((Impact_0312['Response'] - Impact_0312['Predict']) / Impact_0312['Predict'])
+Impact_0312['Relative_Impact_lower'] = (
+        (Impact_0312['Response'] - Impact_0312['Predict_Lower']) / Impact_0312['Predict_Lower'])
+Impact_0312['Relative_Impact_upper'] = (
+        (Impact_0312['Response'] - Impact_0312['Predict_Upper']) / Impact_0312['Predict_Upper'])
+Impact_Sta = Impact_0312.groupby(['stationid']).mean()['Relative_Impact'].reset_index()
 # plt.plot(Impact_Sta['Relative_Impact'])
 # sns.distplot(Impact_Sta['Relative_Impact'])
-Stations = pd.read_csv('LStations_Chicago.csv', index_col=0)
-Impact_Sta = Impact_Sta.merge(Stations, on='station_id')
-Impact_Sta.to_csv('Impact_Sta.csv')
+Impact_Sta.to_csv('Divvy_Impact_Sta.csv')
 
 # Plot the impact for each station
-Impact_0101 = Impact[Impact['time'] >= datetime.datetime(2020, 2, 1)]
-Impact_0101['Relative_Impact'] = (Impact_0101['point.effect'] / Impact_0101['point.pred'])
-Impact_0101['Relative_Impact_lower'] = (Impact_0101['point.effect.lower'] / Impact_0101['point.pred.lower'])
-Impact_0101['Relative_Impact_upper'] = (Impact_0101['point.effect.upper'] / Impact_0101['point.pred.upper'])
-Impact_Sta_plot = Impact_0101.groupby(['time']).mean().reset_index()
+Impact_0101 = Impact[Impact['Date'] >= datetime.datetime(2020, 2, 1)]
+Impact_0101['point.effect'] = Impact_0101['Response'] - Impact_0101['Predict']
+Impact_0101['Relative_Impact'] = ((Impact_0101['Response'] - Impact_0101['Predict']) / Impact_0101['Predict'])
+Impact_0101['Relative_Impact_lower'] = (
+        (Impact_0101['Response'] - Impact_0101['Predict_Lower']) / Impact_0101['Predict_Lower'])
+Impact_0101['Relative_Impact_upper'] = (
+        (Impact_0101['Response'] - Impact_0101['Predict_Upper']) / Impact_0101['Predict_Upper'])
+Impact_Sta_plot = Impact_0101.groupby(['Date']).mean().reset_index()
 
 sns.set_palette(sns.color_palette("GnBu_d"))
 plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
@@ -166,22 +167,24 @@ fig, ax = plt.subplots(figsize=(12, 8), nrows=4, ncols=1, sharex=True)
 ax[0].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 ax[1].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 ax[2].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-sns.lineplot(data=Impact_0101, x='time', hue='station_id', y='point.pred', ax=ax[0], legend=False,
-             palette=sns.color_palette("GnBu_d", Impact_0101.station_id.unique().shape[0]), alpha=0.4)
-ax[0].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.pred'], color='#2f4c58', lw=2)
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Predict', ax=ax[0], legend=False,
+             palette=sns.color_palette("GnBu_d", Impact_0101.stationid.unique().shape[0]), alpha=0.4)
+ax[0].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Predict'], color='#2f4c58', lw=2)
 # ax[0].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.pred.lower'], '--', color='#2f4c58')
 # ax[0].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.pred.upper'], '--', color='#2f4c58')
 ax[0].set_ylabel('Prediction')
-sns.lineplot(data=Impact_0101, x='time', hue='station_id', y='response', ax=ax[1], legend=False,
-             palette=sns.color_palette("GnBu_d", Impact_0101.station_id.unique().shape[0]), alpha=0.4)
-ax[1].plot(Impact_Sta_plot['time'], Impact_Sta_plot['response'], color='#2f4c58', lw=2)
+
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Response', ax=ax[1], legend=False,
+             palette=sns.color_palette("GnBu_d", Impact_0101.stationid.unique().shape[0]), alpha=0.4)
+ax[1].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Response'], color='#2f4c58', lw=2)
 ax[1].set_ylabel('Response')
-sns.lineplot(data=Impact_0101, x='time', hue='station_id', y='point.effect', ax=ax[2], legend=False,
-             palette=sns.color_palette("GnBu_d", Impact_0101.station_id.unique().shape[0]), alpha=0.4)
-ax[2].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 4, 30)], [0, 0], '--', color='r')
-ax[2].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.effect'], color='#2f4c58', lw=2)
-ax[2].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-2 * 10e3, 0.2 * 10e3], '--',
-           color='#2f4c58', lw=2)
+
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='point.effect', ax=ax[2], legend=False,
+             palette=sns.color_palette("GnBu_d", Impact_0101.stationid.unique().shape[0]), alpha=0.4)
+ax[2].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30)], [0, 0], '--', color='r')
+ax[2].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['point.effect'], color='#2f4c58', lw=2)
+# ax[2].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-2 * 10e3, 0.2 * 10e3], '--',
+#            color='#2f4c58', lw=2)
 plt.text(0.35, 0.1, 'Pre-Intervention', horizontalalignment='center', verticalalignment='center',
          transform=ax[2].transAxes)
 plt.text(0.53, 0.1, 'Intervention', horizontalalignment='center', verticalalignment='center',
@@ -189,11 +192,11 @@ plt.text(0.53, 0.1, 'Intervention', horizontalalignment='center', verticalalignm
 # ax[2].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.effect.lower'], '--', color='#2f4c58')
 # ax[2].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.effect.upper'], '--', color='#2f4c58')
 ax[2].set_ylabel('Piecewise impact')
-sns.lineplot(data=Impact_0101, x='time', hue='station_id', y='Relative_Impact', ax=ax[3], legend=False,
-             palette=sns.color_palette("GnBu_d", Impact_0101.station_id.unique().shape[0]), alpha=0.4)
-ax[3].plot(Impact_Sta_plot['time'], Impact_Sta_plot['Relative_Impact'], color='#2f4c58', lw=2)
-ax[3].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 4, 30)], [0, 0], '--', color='r')
-ax[3].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-1, 1], '--', color='#2f4c58', lw=2)
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Relative_Impact', ax=ax[3], legend=False,
+             palette=sns.color_palette("GnBu_d", Impact_0101.stationid.unique().shape[0]), alpha=0.4)
+ax[3].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Relative_Impact'], color='#2f4c58', lw=2)
+ax[3].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30)], [0, 0], '--', color='r')
+# ax[3].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-1, 1], '--', color='#2f4c58', lw=2)
 # ax[3].plot(Impact_Sta_plot['time'], Impact_Sta_plot['Relative_Impact_lower'], '--', color='#2f4c58')
 # ax[3].plot(Impact_Sta_plot['time'], Impact_Sta_plot['Relative_Impact_upper'], '--', color='#2f4c58')
 ax[3].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
