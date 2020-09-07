@@ -41,7 +41,7 @@ Buffer_S = Station.buffer(Buffer_V, cap_style=1).reset_index(drop=True).reset_in
 Buffer_S.columns = ['B_ID', 'geometry']
 Buffer_S = gpd.GeoDataFrame(Buffer_S, geometry='geometry', crs='EPSG:4326')
 Buffer_S = Buffer_S.to_crs('EPSG:' + str(utm_code))
-Buffer_S['station_id'] = Station['from_stati']
+Buffer_S['from_stati'] = Station['from_stati']
 # Buffer_S.to_file('DivvyBuffer.shp')
 
 ## Socio calculation
@@ -156,35 +156,35 @@ SInLand_Area.loc[SInLand_Area['Land_Use_F2'] == '15', 'Land_Use_Des'] = 'TCUW'
 SInLand_Area.loc[SInLand_Area['Land_Use_F1'] == '3', 'Land_Use_Des'] = 'OPENSPACE'
 SInLand_Area.loc[SInLand_Area['Land_Use_F1'].isin(['2', '4', '5', '6', '9']), 'Land_Use_Des'] = 'OTHERS'
 SInLand_Area.loc[SInLand_Area['Land_Use_Des'] == 'TCUW', 'Land_Use_Des'] = 'OTHERS'
-SInLand_Area_New = SInLand_Area.groupby(['station_id', 'Land_Use_Des']).sum()['Area'].reset_index()
+SInLand_Area_New = SInLand_Area.groupby(['from_stati', 'Land_Use_Des']).sum()['Area'].reset_index()
 
 # Calculate the LUM
-TAZ_LAND_USE_ALL = SInLand_Area.groupby(['station_id']).sum()['Area'].reset_index()
-TAZ_LAND_USE_ALL.columns = ['station_id', 'ALL_AREA']
-LandUse_Area1 = SInLand_Area_New.merge(TAZ_LAND_USE_ALL, on='station_id')
+TAZ_LAND_USE_ALL = SInLand_Area.groupby(['from_stati']).sum()['Area'].reset_index()
+TAZ_LAND_USE_ALL.columns = ['from_stati', 'ALL_AREA']
+LandUse_Area1 = SInLand_Area_New.merge(TAZ_LAND_USE_ALL, on='from_stati')
 LandUse_Area1['Percen'] = LandUse_Area1['Area'] / LandUse_Area1['ALL_AREA']
 LandUse_Area1['LogPercen'] = np.log(LandUse_Area1['Percen'])
 LandUse_Area1['LogP*P'] = LandUse_Area1['Percen'] * LandUse_Area1['LogPercen']
-LandUse_Area2 = LandUse_Area1.groupby(['station_id']).sum()['LogP*P'].reset_index()
-LandUse_Area3 = SInLand_Area_New.groupby(['station_id']).count()['Land_Use_Des'].reset_index()
-LandUse_Area3.columns = ['station_id', 'Count']
-LandUse_Area2 = LandUse_Area2.merge(LandUse_Area3, on='station_id')
+LandUse_Area2 = LandUse_Area1.groupby(['from_stati']).sum()['LogP*P'].reset_index()
+LandUse_Area3 = SInLand_Area_New.groupby(['from_stati']).count()['Land_Use_Des'].reset_index()
+LandUse_Area3.columns = ['from_stati', 'Count']
+LandUse_Area2 = LandUse_Area2.merge(LandUse_Area3, on='from_stati')
 LandUse_Area2['LUM'] = LandUse_Area2['LogP*P'] * ((-1) / (np.log(LandUse_Area2['Count'])))
-LUM = LandUse_Area2[['station_id', 'LUM']].fillna(LandUse_Area2.mean())
-LandUse_Area_PCT = LandUse_Area1[['station_id', 'Land_Use_Des', 'Area', 'Percen']]
-LandUse_Area_PCT_Final = LandUse_Area_PCT.pivot('station_id', 'Land_Use_Des', 'Percen').fillna(0).reset_index()
+LUM = LandUse_Area2[['from_stati', 'LUM']].fillna(LandUse_Area2.mean())
+LandUse_Area_PCT = LandUse_Area1[['from_stati', 'Land_Use_Des', 'Area', 'Percen']]
+LandUse_Area_PCT_Final = LandUse_Area_PCT.pivot('from_stati', 'Land_Use_Des', 'Percen').fillna(0).reset_index()
 
 # Read roads
-Roads = gpd.read_file(r'ROAD.shp')
+Roads = gpd.read_file(r'D:\Transit\GIS\ROAD.shp')
 Roads = Roads.to_crs('EPSG:' + str(utm_code))
-# INTERSECT with LANDUSE
+# INTERSECT with roads
 SInRoad = gpd.clip(Roads, Buffer_S)
 SInRoad1 = gpd.overlay(Roads, Buffer_S, how='intersection')
 SInRoad1['Length'] = SInRoad1['geometry'].length
-SInRoad_Length = SInRoad1.groupby(['station_id', 'fclass']).sum()['Length'].reset_index()
+SInRoad_Length = SInRoad1.groupby(['from_stati', 'fclass']).sum()['Length'].reset_index()
 set(SInRoad_Length['fclass'])
-Road_Length_With_Type = SInRoad_Length.pivot('station_id', 'fclass', 'Length').fillna(0).reset_index()
-SInRoad_Length.groupby(['fclass']).sum()['Length'].plot.bar()
+Road_Length_With_Type = SInRoad_Length.pivot('from_stati', 'fclass', 'Length').fillna(0).reset_index()
+# SInRoad_Length.groupby(['fclass']).sum()['Length'].plot.bar()
 
 # SInRoad1.to_file('SInRoad_overlay.shp')
 Road_Length_With_Type['Primary'] = Road_Length_With_Type['motorway'] + Road_Length_With_Type['motorway_link'] + \
@@ -196,7 +196,7 @@ Road_Length_With_Type['Secondary'] = Road_Length_With_Type['secondary'] + Road_L
 Road_Length_With_Type['Minor'] = Road_Length_With_Type['service'] + Road_Length_With_Type['steps'] + \
                                  Road_Length_With_Type['track'] + Road_Length_With_Type['living_street']
 Road_Length_With_Type['All_Road_Length'] = Road_Length_With_Type.iloc[:, 1:-3].sum(axis=1)
-Road_Length_With_Type = Road_Length_With_Type[['station_id', 'Primary', 'Secondary', 'Minor', 'All_Road_Length']]
+Road_Length_With_Type = Road_Length_With_Type[['from_stati', 'Primary', 'Secondary', 'Minor', 'All_Road_Length']]
 # Calculate density
 Road_Length_With_Type['Primary'] = (Road_Length_With_Type['Primary'] * 0.000621371) / (
         3.1415926 * (Buffer_V * 0.000621371) * (Buffer_V * 0.000621371))
@@ -205,6 +205,18 @@ Road_Length_With_Type['Secondary'] = (Road_Length_With_Type['Secondary'] * 0.000
 Road_Length_With_Type['Minor'] = (Road_Length_With_Type['Minor'] * 0.000621371) / (
         3.1415926 * (Buffer_V * 0.000621371) * (Buffer_V * 0.000621371))
 Road_Length_With_Type['All_Road_Length'] = (Road_Length_With_Type['All_Road_Length'] * 0.000621371) / (
+        3.1415926 * (Buffer_V * 0.000621371) * (Buffer_V * 0.000621371))
+
+# Read bike lanes
+Roads_Bike = gpd.read_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Bikeroute.shp')
+Roads_Bike = Roads_Bike.to_crs('EPSG:' + str(utm_code))
+# INTERSECT with roads
+SInRoadBike = gpd.clip(Roads_Bike, Buffer_S)
+SInRoadBike = gpd.overlay(SInRoadBike, Buffer_S, how='intersection')
+SInRoadBike['Length'] = SInRoadBike['geometry'].length
+SInRoad_BikeLength = SInRoadBike.groupby(['from_stati']).sum()['Length'].reset_index()
+SInRoad_BikeLength.columns = ['from_stati', 'Bike_Route']
+SInRoad_BikeLength['All_Road_Length'] = (SInRoad_BikeLength['Bike_Route'] * 0.000621371) / (
         3.1415926 * (Buffer_V * 0.000621371) * (Buffer_V * 0.000621371))
 
 # Read job density
@@ -235,12 +247,68 @@ T_pop = T_pop.groupby('GEOID').sum()['TOTAL POPULATION'].reset_index()
 T_pop = T_pop.merge(SInBG_index, on='GEOID', how='right')
 T_pop = T_pop.fillna(T_pop.mean())
 T_pop['NPop_Density'] = T_pop['TOTAL POPULATION'] / (T_pop['AREA'] * 1e3)
-T_pop = T_pop[['station_id', 'NPop_Density']]
+T_pop = T_pop[['from_stati', 'NPop_Density']]
 # T_pop.describe().T
+
+# Transit_Related variables
+# Bus
+# How many ridership
+# Read bus stop
+Busstop = gpd.read_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Busstop_Ridership.shp')
+Busstop = Busstop.to_crs('EPSG:' + str(utm_code))
+# SJOIN with Buffer
+SInBusstop = gpd.sjoin(Busstop, Buffer_S, how='inner', op='within').reset_index(drop=True)
+SInBusstop.columns
+# Number of busstop
+Numofbusstop = SInBusstop.groupby('from_stati').count()['OBJECTID_1'].reset_index()
+Numofbusstop.columns = ['from_stati', 'Bus_stop_count']
+# Ridership
+Bus_Rider = SInBusstop.groupby('from_stati').sum()[['boardings', 'alightings']].reset_index()
+# Nearest Distance to busstop
+Distance_Bus = pd.DataFrame({'Distance_Busstop': Station.geometry.apply(lambda x: Busstop.distance(x).min()),
+                             'from_stati': Station.from_stati})
+
+# Transit
+Railstop = gpd.read_file(r'D:\Transit\GIS\Relative_Impact.shp')
+Railstop = Railstop.to_crs('EPSG:' + str(utm_code))
+# SJOIN with Buffer
+SInRailstop = gpd.sjoin(Railstop, Buffer_S, how='inner', op='within').reset_index(drop=True)
+# Number of rail stop
+NumofRailstop = SInRailstop.groupby('from_stati').count()['Field1'].reset_index()
+NumofRailstop.columns = ['from_stati', 'Rail_stop_count']
+# Ridership
+Rail_Rider = SInRailstop.groupby('from_stati').sum()[['rides']].reset_index()
+# Nearest Distance to rail stop
+Distance_Rail = pd.DataFrame({'Distance_Rail': Station.geometry.apply(lambda x: Railstop.distance(x).min()),
+                              'from_stati': Station.from_stati})
+
+# Bike station related
+Capacity_Bike = pd.read_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_2019.csv', index_col=0)
+Capacity_Bike = Capacity_Bike[['from_station_id', 'from_station_capacity']]
+SInBike = gpd.sjoin(Station, Buffer_S, how='inner', op='within').reset_index(drop=True)
+# Not include itself
+SInBike = SInBike[SInBike['from_stati_left'] != SInBike['from_stati_right']]
+# Number of bike station
+Numofbikestation = SInBike.groupby('from_stati_right').count()['Field1'].reset_index()
+Numofbikestation.columns = ['from_stati', 'Near_Bike_station_Count']
+# Capacity
+Capacity_Bike.columns = ['from_stati_left', 'Bike_Capacity']
+SInBike = SInBike.merge(Capacity_Bike, on='from_stati_left')
+Numofbikecapacity = SInBike.groupby('from_stati_right').sum()['Bike_Capacity'].reset_index()
+Numofbikecapacity.columns = ['from_stati', 'Near_Bike_Capacity']
+# Nearest Distance to bike station
+Distance_Bike = pd.DataFrame({'Distance_Bikestation': Station.geometry.apply(lambda x: sorted(Station.distance(x))[1]),
+                              'from_stati': Station.from_stati})
+# Pickups
+Bike_Rider = SInBike.groupby('from_stati_left').sum()[['trip_id']].reset_index()
+Bike_Rider.columns = ['from_stati', 'Near_bike_pickups']
+
+# Distance to city center
+
 
 # Merge all data
 dfs = [Road_Length_With_Type, LandUse_Area_PCT_Final, LUM, StationZIP, Socid_Raw_Final, W_Job]
-All_final = reduce(lambda left, right: pd.merge(left, right, on='station_id'), dfs)
+All_final = reduce(lambda left, right: pd.merge(left, right, on='from_stati'), dfs)
 All_final.isnull().sum()
 All_final.describe().T
 
@@ -281,12 +349,12 @@ os.chdir(r'D:\Transit')
 Impact_C = pd.read_csv(r'Impact_Sta.csv', index_col=0)
 Features = pd.read_csv(r'Features_Transit_0822.csv', index_col=0)
 dfs = [Impact_C, Features]
-All_final = reduce(lambda left, right: pd.merge(left, right, on='station_id'), dfs)
+All_final = reduce(lambda left, right: pd.merge(left, right, on='from_stati'), dfs)
 All_final.describe().T
 
 # Read transit related data
 Stop_ID = pd.read_csv(r'D:\Transit\google_transit\stops.txt')
-Stop_ID = Stop_ID[Stop_ID['parent_station'].isin(All_final['station_id'])]
+Stop_ID = Stop_ID[Stop_ID['parent_station'].isin(All_final['from_stati'])]
 Stop_times = pd.read_csv(r'D:\Transit\google_transit\stop_times.txt')
 Stop_times = Stop_times[Stop_times['stop_id'].isin(Stop_ID['stop_id'])]
 Stop_times['hour'] = [var[0] for var in Stop_times['arrival_time'].str.split(':')]
@@ -309,7 +377,7 @@ No_Trips = No_Trips.merge(Stop_ID, on='stop_id')
 No_Trips_1 = No_Trips.groupby(['parent_station']).sum()['trip_id'].reset_index()
 No_Trips_2 = No_Trips.groupby(['parent_station']).mean()['Freq'].reset_index()
 No_Fre_Trips = No_Trips_1.merge(No_Trips_2, on='parent_station')
-No_Fre_Trips.columns = ['station_id', 'Num_trips', 'Freq']
+No_Fre_Trips.columns = ['from_stati', 'Num_trips', 'Freq']
 
 # Calculate the decrease based on 2019
 # Calculate the impact from last year
@@ -328,17 +396,17 @@ Rider_2019 = ridership_old[
 Rider_2019['Month'] = Rider_2019.date.dt.month
 Rider_2019['Day'] = Rider_2019.date.dt.day
 
-Rider_2020 = Rider_2020.merge(Rider_2019, on=['station_id', 'Month', 'Day'])
+Rider_2020 = Rider_2020.merge(Rider_2019, on=['from_stati', 'Month', 'Day'])
 Rider_2020['RELIMP'] = (Rider_2020['rides_x'] - Rider_2020['rides_y']) / Rider_2020['rides_y']
 Rider_2020 = Rider_2020.replace([np.inf, -np.inf], np.nan)
-Rider_2020_Impact = Rider_2020.groupby(['station_id']).mean()[['RELIMP', 'rides_x', 'rides_y']].reset_index()
+Rider_2020_Impact = Rider_2020.groupby(['from_stati']).mean()[['RELIMP', 'rides_x', 'rides_y']].reset_index()
 Rider_2020_Impact = Rider_2020_Impact[Rider_2020_Impact['RELIMP'] < 0]
 Rider_2020_Impact.describe()
-Rider_2020_Impact = Rider_2020_Impact[['station_id', 'RELIMP']]
+Rider_2020_Impact = Rider_2020_Impact[['from_stati', 'RELIMP']]
 
 # Merge all in one matrix
-All_final = All_final.merge(No_Fre_Trips, on='station_id')
-All_final = All_final.merge(Rider_2020_Impact, on='station_id', how='left')
+All_final = All_final.merge(No_Fre_Trips, on='from_stati')
+All_final = All_final.merge(Rider_2020_Impact, on='from_stati', how='left')
 All_final.loc[All_final['RELIMP'].isna(), 'RELIMP'] = All_final.loc[All_final['RELIMP'].isna(), 'Relative_Impact']
 # plt.plot(All_final['Relative_Impact'],All_final['RELIMP'])
 # Change unit
