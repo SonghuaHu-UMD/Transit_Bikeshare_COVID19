@@ -9,6 +9,17 @@ import geopandas as gpd
 from scipy.stats import pearsonr
 import scipy.stats
 
+
+def calculate_pvalues(df):
+    df = df.dropna()._get_numeric_data()
+    dfcols = pd.DataFrame(columns=df.columns)
+    pvalues = dfcols.transpose().join(dfcols, how='outer')
+    for r in df.columns:
+        for c in df.columns:
+            pvalues[r][c] = round(pearsonr(df[r], df[c])[1], 4)
+    return pvalues
+
+
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
 plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
 
@@ -22,8 +33,9 @@ Rider_2020 = ridership_old[(ridership_old['startdate'] < datetime.datetime(2020,
         ridership_old['startdate'] > datetime.datetime(2020, 3, 12))]
 Rider_2020['Month'] = Rider_2020.startdate.dt.month
 Rider_2020['Day'] = Rider_2020.startdate.dt.day
-Rider_2020 = Rider_2020[['from_station_id', 'trip_id', 'Month', 'Day', 'startdate']]
-Rider_2020.columns = ['stationid', 'Response', 'Month', 'Day', 'Date']
+Rider_2020['Week'] = Rider_2020.startdate.dt.dayofweek
+Rider_2020 = Rider_2020[['from_station_id', 'trip_id', 'Month', 'Day', 'Week', 'startdate']]
+Rider_2020.columns = ['stationid', 'Response', 'Month', 'Day', 'Week', 'Date']
 
 Rider_2019 = ridership_old[(ridership_old['startdate'] < datetime.datetime(2019, 8, 1)) & (
         ridership_old['startdate'] > datetime.datetime(2019, 3, 12))]
@@ -35,6 +47,24 @@ Rider_2019.columns = ['stationid', 'Predict', 'Month', 'Day']
 Rider_2020 = Rider_2020.merge(Rider_2019, on=['stationid', 'Month', 'Day'])
 Rider_2020['point.effect'] = Rider_2020['Response'] - Rider_2020['Predict']
 Rider_2020['Relative_Impact'] = (Rider_2020['Response'] - Rider_2020['Predict']) / Rider_2020['Predict']
+Rider_2020['Cum_effect'] = Rider_2020.groupby(['stationid'])['point.effect'].cumsum()
+Rider_2020['Cum_Response'] = Rider_2020.groupby(['stationid'])['Response'].cumsum()
+Rider_2020['Cum_Predict'] = Rider_2020.groupby(['stationid'])['Predict'].cumsum()
+Rider_2020['Cum_Relative_Impact'] = (Rider_2020['Cum_Response'] - Rider_2020['Cum_Predict']) / Rider_2020['Cum_Predict']
+
+for jj in list(set(Rider_2020['stationid'])):
+    # jj = 3
+    tem = Rider_2020[Rider_2020['stationid'] == jj]
+    tem = tem.set_index('Date')
+    # Find
+    fig, ax = plt.subplots(figsize=(12, 6), nrows=2, ncols=1)
+    ax[0].plot(tem['Response'], '--', color='k')
+    ax[0].plot(tem['Predict'], color='g')
+    ax[1].plot(tem['Cum_Relative_Impact'])
+    plt.tight_layout()
+    plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Cum_2019\\' + str(jj) + '.png')
+    plt.close()
+
 Rider_2020 = Rider_2020.replace([np.inf, -np.inf], np.nan)
 sns.distplot(Rider_2020['Relative_Impact'])
 Impact_Sta_plot = Rider_2020.groupby(['Date']).mean().reset_index()
@@ -92,9 +122,16 @@ plt.subplots_adjust(top=0.954, bottom=0.078, left=0.068, right=0.985, hspace=0.2
 Rider_2020.head().T
 Rider_2020_New = Rider_2020.copy()
 Rider_2020_New = Rider_2020_New.rename({'stationid': 'from_stati'}, axis=1)
+
 # Merge with features
 All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv', index_col=0)
 All_final = All_final.merge(Rider_2020_New, on='from_stati')
+# Lat Lon Capacity
+All_Station = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Station.csv')
+All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
+All_Station_Need.columns = ['from_stati', 'lon', 'lat', 'capacity']
+All_final = All_final.merge(All_Station_Need, on='from_stati')
+All_final['Time_Index'] = (All_final['Date'] - datetime.datetime(2020, 3, 12)).dt.days
 All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_0907.csv')
 
 # Directly cumsum and minus
@@ -105,21 +142,12 @@ Sum_Impact = Sum_Impact[['stationid', 'Cum_Rela_Imp', 'Predict']]
 Sum_Impact.columns = ['from_stati', 'Cum_Effect', 'Pickups']
 Sum_Impact.describe()
 # Merge with features
-All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv', index_col=0)
+All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_0907.csv', index_col=0)
+All_final = All_final.drop_duplicates(subset=['from_stati'])
 All_final = All_final.merge(Sum_Impact, on='from_stati')
+All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Avg_final_Divvy_R_0907.csv')
 All_final = All_final.drop(['GEOID', 'AREA', 'from_stati', 'ZIP_CODE', 'OTHERS', ], axis=1)
 All_final.columns
-
-
-def calculate_pvalues(df):
-    df = df.dropna()._get_numeric_data()
-    dfcols = pd.DataFrame(columns=df.columns)
-    pvalues = dfcols.transpose().join(dfcols, how='outer')
-    for r in df.columns:
-        for c in df.columns:
-            pvalues[r][c] = round(pearsonr(df[r], df[c])[1], 4)
-    return pvalues
-
 
 corr_p = calculate_pvalues(All_final)
 corr_p[(corr_p > 0.1)] = 0.1
@@ -127,12 +155,11 @@ corr_p[(corr_p < 0.1) & (corr_p >= 0.05)] = 0.05
 corr_p[(corr_p < 0.05) & (corr_p >= 0.01)] = 0.01
 corr_p[(corr_p < 0.01) & (corr_p >= 0.001)] = 0.001
 corr_p[(corr_p < 0.001) & (corr_p >= 0)] = 0
-
 corr_p = corr_p.replace({0.1: '', 0.05: '.', 0.01: '*', 0.001: '**', 0: "***"})
 
 # annot=corr_p.values,
 fig, ax = plt.subplots(figsize=(11, 9))
-plt.rcParams.update({'font.size': 14, 'font.family': "Times New Roman"})
+plt.rcParams.update({'font.size': 10, 'font.family': "Times New Roman"})
 sns.heatmap(All_final.corr(), fmt='',
             cmap=sns.diverging_palette(240, 130, as_cmap=True),
             square=True, xticklabels=True, yticklabels=True, linewidths=.5)

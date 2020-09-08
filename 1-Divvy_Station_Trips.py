@@ -217,9 +217,9 @@ for jj in list(set(Day_count['from_station_id'])):
 
 # Some Stations should be dropped
 Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 398, 399, 400, 407, 408, 409, 411, 412,
-               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524, 528, 529,
-               530, 531, 532, 533, 534, 535, 536, 537] + list(range(538, 559)) \
-              + [593, 594, 595, 642, 646, 647, 648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683]
+               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524] + list(
+    range(528, 589)) + [593, 594, 595, 559, 564, 567, 570, 571, 572, 574, 576, 579, 580, 583, 585, 588, 642, 646, 647,
+                        648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683, 666, 673, 672, 662, 661]
 len(Not_Need_ID)
 Day_count = Day_count[~Day_count['from_station_id'].isin(Not_Need_ID)].reset_index(drop=True)
 Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')
@@ -230,5 +230,5 @@ Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 Day_count_2019 = Day_count[Day_count['startdate'].dt.year == 2019]
 Day_count_2019.columns
 Day_count_2019 = Day_count_2019.groupby(['from_station_id']).mean()[
-    ['trip_id', 'from_station_lon', 'from_station_lat','from_station_capacity']].reset_index()
+    ['trip_id', 'from_station_lon', 'from_station_lat', 'from_station_capacity']].reset_index()
 Day_count_2019.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_2019.csv')

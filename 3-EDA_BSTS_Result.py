@@ -9,40 +9,17 @@ import geopandas as gpd
 
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
 
+Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 398, 399, 400, 407, 408, 409, 411, 412,
+               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524] + list(
+    range(528, 589)) + [593, 594, 595, 559, 564, 567, 570, 571, 572, 574, 576, 579, 580, 583, 585, 588, 642, 646, 647,
+                        648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683, 666, 673, 672, 662, 661]
+
 # Plot the time series
 Results_All = pd.read_csv(r'finalMatrix_Divvy_0906.csv', index_col=0)
 Results_All['Date'] = pd.to_datetime(Results_All['Date'])
 Results_All.columns
-# plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
-
-# Plot year trend
-Results_All['Year'] = Results_All['Date'].dt.year
-Temp_time = Results_All.groupby(['Year', 'Component', 'stationid']).mean().reset_index()
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.lineplot(data=Temp_time[Temp_time['Component'] == 'Trend'], x='Year', hue='stationid', y='Value', ax=ax,
-             legend=False,
-             palette=sns.color_palette("GnBu_d", Temp_time.stationid.unique().shape[0]), alpha=0.4)
-ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-plt.ylabel('Trend')
-plt.tight_layout()
-plt.savefig('FIGN-2.png', dpi=600)
-plt.savefig('FIGN-2.svg')
-
-fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(16, 6), sharex=True)  # 12,9.5
-for jj in set(Results_All['stationid']):
-    print(jj)
-    # jj = 40930
-    myFmt = mdates.DateFormatter('%Y')
-    Temp_time = Results_All[Results_All['stationid'] == jj]
-    Temp_time['Year'] = Temp_time['Date'].dt.year
-    Temp_time = Temp_time.groupby(['Year', 'Component']).mean().reset_index()
-    # Temp_time = Temp_time[Temp_time['Date'] >= '2019-01-01']
-    # ax[0].set_title('Station_ID: ' + str(jj))
-    ax.plot(Temp_time.loc[Temp_time['Component'] == 'Trend', 'Value'] / max(
-        Temp_time.loc[Temp_time['Component'] == 'Trend', 'Value']), color='#2f4c58', alpha=0.7, lw=2)
-    ax.set_ylabel('Trend')
-
+Results_All = Results_All[~Results_All['stationid'].isin(Not_Need_ID)].reset_index(drop=True)
+'''
 plt.rcParams.update({'font.size': 20, 'font.family': "Times New Roman"})
 for jj in set(Results_All['stationid']):
     print(jj)
@@ -134,12 +111,45 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.987, bottom=0.087, left=0.022, right=0.987, hspace=0.078, wspace=0.09)
 plt.savefig('FIG2-2.png', dpi=600)
 plt.savefig('FIG2-2.svg')
-
+'''
 # Calculate the casual impact
 # For build the PLS model
-Impact = pd.pivot_table(Results_All, values='Value', index=['Date', 'stationid'],
-                        columns=['Component']).reset_index()
-Impact_0312 = Impact[Impact['Date'] >= datetime.datetime(2020, 3, 12)]
+Impact = pd.pivot_table(Results_All, values='Value', index=['Date', 'stationid'], columns=['Component']).reset_index()
+del Results_All
+Impact_0312 = Impact[Impact['Date'] >= datetime.datetime(2020, 3, 13)]
+Impact_0312 = Impact_0312.sort_values(by=['stationid', 'Date']).reset_index(drop=True)
+Impact_0312.columns
+Impact_0312['Cum_Predict'] = Impact_0312.groupby(['stationid'])['Predict'].cumsum()
+Impact_0312['Cum_Relt_Effect'] = Impact_0312['Cum_effect'] / Impact_0312['Cum_Predict']
+Impact_0312.rename({'stationid': 'from_stati'}, axis=1, inplace=True)
+# Merge with station
+# Merge with features
+All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv', index_col=0)
+All_final = All_final.merge(Impact_0312, on='from_stati')
+# Lat Lon Capacity
+All_Station = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Station.csv')
+All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
+All_Station_Need.columns = ['from_stati', 'lon', 'lat', 'capacity']
+All_final = All_final.merge(All_Station_Need, on='from_stati')
+All_final['Time_Index'] = (All_final['Date'] - datetime.datetime(2020, 3, 12)).dt.days
+All_final['Week'] = All_final['Date'].dt.dayofweek
+All_final['Month'] = All_final['Date'].dt.month
+All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_BSTS_0907.csv')
+
+# Impact_0312.to_csv('Impact_0312_tem.csv')
+
+'''
+for jj in list(set(Impact_0312['stationid'])):
+    # jj = 3
+    tem = Impact_0312[Impact_0312['stationid'] == jj]
+    tem = tem.set_index('Date')
+    # Find
+    fig, ax = plt.subplots(figsize=(12, 6), nrows=1, ncols=1)
+    ax.plot(tem['Cum_Relt_Effect'], '-', color='k')
+    plt.tight_layout()
+    plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Cum_BSTS\\' + str(jj) + '.png')
+    plt.close()
+'''
 # Calculate the relative impact
 Impact_0312['Relative_Impact'] = ((Impact_0312['Response'] - Impact_0312['Predict']) / Impact_0312['Predict'])
 Impact_0312['Relative_Impact_lower'] = (
