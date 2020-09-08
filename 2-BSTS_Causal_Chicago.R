@@ -93,9 +93,10 @@ plot(bsts.model1, "coef")
 
 # Build the BSTS for all stations
 # Get prediction result
-dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Day_count_Divvy_dropOutlier.csv') # Daily_Lstaion_Final_0806.csv
+dat <- read.csv('C:\\Users\\hsonghua\\Desktop\\Divvy_Covid-19\\Day_count_Divvy_dropOutlier.csv') # Daily_Lstaion_Final_0806.csv
 dat$startdate <- as.Date(dat$startdate)
 AllStation <- unique(dat$from_station_id)
+
 # Setup parallel backend
 cores <- detectCores()
 cl <- makeCluster(cores[1] - 1)
@@ -106,7 +107,7 @@ finalMatrix <- data.frame()
 finalMatrix <-
   foreach(
     ccount = 1:(length(AllStation)),
-    .combine = rbind,
+    .combine = rbind, .errorhandling='remove',
     .packages = c("CausalImpact", "reshape2", "lattice", "ggplot2", "forecast")
   ) %dopar%
   {
