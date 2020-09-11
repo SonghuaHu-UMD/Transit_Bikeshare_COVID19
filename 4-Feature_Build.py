@@ -10,6 +10,7 @@ from functools import reduce
 import seaborn as sns
 
 pyproj.__version__  # (2.6.0)
+
 gpd.__version__
 
 
