@@ -13,7 +13,7 @@ Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 3
                421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524] + list(
     range(528, 589)) + [593, 594, 595, 559, 564, 567, 570, 571, 572, 574, 576, 579, 580, 583, 585, 588, 642, 646, 647,
                         648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683, 666, 673, 672, 662, 661]
-
+len(Not_Need_ID)
 # Plot the time series
 Results_All = pd.read_csv(r'finalMatrix_Divvy_0906.csv', index_col=0)
 Results_All['Date'] = pd.to_datetime(Results_All['Date'])
@@ -23,97 +23,69 @@ Results_All = Results_All[~Results_All['stationid'].isin(Not_Need_ID)].reset_ind
 plt.rcParams.update({'font.size': 20, 'font.family': "Times New Roman"})
 for jj in set(Results_All['stationid']):
     print(jj)
-    # jj = 2
+    # jj = 84
     Temp_time = Results_All[Results_All['stationid'] == jj]
     # Temp_time = Temp_time[Temp_time['Date'] >= '2019-01-01']
     Temp_time.set_index('Date', inplace=True)
 
-    fig, ax = plt.subplots(nrows=7, ncols=1, figsize=(16, 9.5), sharex=True)  # 12,9.5
+    fig, ax = plt.subplots(nrows=7, ncols=1, figsize=(12, 10), sharex=True)  # 12,9.5
     # ax[0].set_title('Station_ID: ' + str(jj))
-    ax[0].plot(Temp_time.loc[Temp_time['Component'] == 'Trend', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
-    ax[0].set_ylabel('Trend')
+    ax[0].plot(Temp_time.loc[Temp_time['Component'] == 'Trend', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
+    #ax[0].set_ylabel('Trend')
+    ax[0].annotate('Trend', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
 
-    ax[1].plot(Temp_time.loc[Temp_time['Component'] == 'Seasonality', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
-    ax[1].set_ylabel('Week')
+    ax[1].plot(Temp_time.loc[Temp_time['Component'] == 'Seasonality', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
+    #ax[1].set_ylabel('Week')
+    ax[1].annotate('Week', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
 
-    ax[2].plot(Temp_time.loc[Temp_time['Component'] == 'Monthly', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
-    ax[2].set_ylabel('Month')
+    ax[2].plot(Temp_time.loc[Temp_time['Component'] == 'Monthly', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
+    #ax[2].set_ylabel('Month')
+    ax[2].annotate('Month', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
 
-    ax[3].plot(Temp_time.loc[Temp_time['Component'] == 'Regression', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
-    ax[3].set_ylabel('Regress')
+    ax[3].plot(Temp_time.loc[Temp_time['Component'] == 'Regression', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
+    #ax[3].set_ylabel('Regress')
+    ax[3].annotate('Regressor', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
 
-    ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
-    ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Predict', 'Value'], '--', color='#62760c', alpha=0.7, lw=0.5)
+    ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Predict', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
+    ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'], '--', color='#62760c', alpha=0.7, lw=0.8)
     ax[4].fill_between(Temp_time.loc[Temp_time['Component'] == 'Predict_Lower', 'Value'].index,
                        Temp_time.loc[Temp_time['Component'] == 'Predict_Lower', 'Value'],
-                       Temp_time.loc[Temp_time['Component'] == 'Predict_Upper', 'Value'], facecolor='#96bb7c',
-                       alpha=0.5)
-    ax[4].set_ylabel('Predict')
-
+                       Temp_time.loc[Temp_time['Component'] == 'Predict_Upper', 'Value'], facecolor='#dbd7d4',alpha=0.7)
+    #ax[4].set_ylabel('Predict')
+    #ax[4].annotate('Prediction', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
+    ax[4].legend(['Prediction','Response'], frameon=False,loc=2,ncol=2,fontsize=18)
+    
     ax[5].plot(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
-        Temp_time['Component'] == 'Predict', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
+        Temp_time['Component'] == 'Predict', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
     ax[5].fill_between(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'].index,
                        Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
                            Temp_time['Component'] == 'Predict_Upper', 'Value'],
                        Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
-                           Temp_time['Component'] == 'Predict_Lower', 'Value'], facecolor='#96bb7c', alpha=0.5)
+                           Temp_time['Component'] == 'Predict_Lower', 'Value'], facecolor='#dbd7d4', alpha=0.7)
+    ax[5].annotate('Point Effect', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top')
 
-    ax[6].plot(Temp_time.loc[Temp_time['Component'] == 'Cum_effect', 'Value'], color='#2f4c58', alpha=0.7, lw=1)
+    ax[6].plot(Temp_time.loc[Temp_time['Component'] == 'Cum_effect', 'Value'], color='#e4b61a', alpha=0.7, lw=1)
     ax[6].fill_between(Temp_time.loc[Temp_time['Component'] == 'Cum_effect', 'Value'].index,
                        Temp_time.loc[Temp_time['Component'] == 'Cum_effect_Lower', 'Value'],
-                       Temp_time.loc[Temp_time['Component'] == 'Cum_effect_Upper', 'Value'], facecolor='#96bb7c',
-                       alpha=0.5)
+                       Temp_time.loc[Temp_time['Component'] == 'Cum_effect_Upper', 'Value'], facecolor='#dbd7d4',
+                       alpha=0.7)
     ax[6].xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
-    ax[6].xaxis.set_major_locator(mdates.WeekdayLocator(interval=30))
-    ax[6].set_ylabel('Effect')
+    ax[6].xaxis.set_major_locator(mdates.WeekdayLocator(interval=60))
+    #ax[6].set_ylabel('Effect')
+    ax[6].annotate('Cumulative Effect', xy=(1, 1),xytext=(0.02, 0.9), xycoords='axes fraction', size=18, ha='left', va='top') 
     ax[6].set_xlabel('Date')
     plt.xlim(xmin=min(Temp_time.index), xmax=max(Temp_time.index))
     # for axx in ax:
     #     axx.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=False)
     # fig.autofmt_xdate()
-    plt.subplots_adjust(top=0.987, bottom=0.087, left=0.087, right=0.982, hspace=0.078, wspace=0.09)
-    # plt.savefig('FIG2-1.png', dpi=600)
-    # plt.savefig('FIG2-1.svg')
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\BSTS_Predict\Full_Time_Range_' + str(jj) + 'png', dpi=500)
+    plt.subplots_adjust(top=0.987, bottom=0.087, left=0.082, right=0.982, hspace=0.078, wspace=0.09)
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG2-1.png', dpi=600)
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG2-1.svg')
+    # plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\BSTS_Predict\Full_Time_Range_' + str(jj) + 'png', dpi=500)
     plt.close()
-
-# Plot the zoom in figure
-jj = 2
-myFmt = mdates.DateFormatter('%b-%d')
-Temp_time = Results_All[Results_All['stationid'] == jj]
-Temp_time = Temp_time[Temp_time['Date'] >= '2020-01-01']
-Temp_time.set_index('Date', inplace=True)
-fig, ax = plt.subplots(nrows=6, ncols=1, figsize=(6, 9.5), sharex=True)  # 12,9.5
-ax[0].plot(Temp_time.loc[Temp_time['Component'] == 'Trend', 'Value'], color='#2f4c58')
-ax[1].plot(Temp_time.loc[Temp_time['Component'] == 'Seasonality', 'Value'], color='#2f4c58')
-ax[2].plot(Temp_time.loc[Temp_time['Component'] == 'Monthly', 'Value'], color='#2f4c58')
-ax[3].plot(Temp_time.loc[Temp_time['Component'] == 'Regression', 'Value'], color='#2f4c58')
-ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'], color='#2f4c58')
-ax[4].plot(Temp_time.loc[Temp_time['Component'] == 'Predict', 'Value'], '--', color='#62760c', alpha=0.8)
-ax[4].fill_between(Temp_time.loc[Temp_time['Component'] == 'Predict_Lower', 'Value'].index,
-                   Temp_time.loc[Temp_time['Component'] == 'Predict_Lower', 'Value'],
-                   Temp_time.loc[Temp_time['Component'] == 'Predict_Upper', 'Value'], facecolor='#96bb7c',
-                   alpha=0.5)
-ax[5].plot(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
-    Temp_time['Component'] == 'Predict', 'Value'], color='#2f4c58')
-ax[5].fill_between(Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'].index,
-                   Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
-                       Temp_time['Component'] == 'Predict_Upper', 'Value'],
-                   Temp_time.loc[Temp_time['Component'] == 'Response', 'Value'] - Temp_time.loc[
-                       Temp_time['Component'] == 'Predict_Lower', 'Value'], facecolor='#96bb7c', alpha=0.5)
-ax[5].xaxis.set_major_formatter(myFmt)
-ax[5].xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
-ax[5].set_xlabel('Date')
-plt.xlim(xmin=min(Temp_time.index), xmax=max(Temp_time.index))
-for ax0 in ax:
-    ax0.axes.yaxis.set_visible(False)
-plt.tight_layout()
-plt.subplots_adjust(top=0.987, bottom=0.087, left=0.022, right=0.987, hspace=0.078, wspace=0.09)
-plt.savefig('FIG2-2.png', dpi=600)
-plt.savefig('FIG2-2.svg')
 '''
 # Calculate the casual impact
-# For build the PLS model
+# For build the GAM model
 Impact = pd.pivot_table(Results_All, values='Value', index=['Date', 'stationid'], columns=['Component']).reset_index()
 del Results_All
 Impact_0312 = Impact[Impact['Date'] >= datetime.datetime(2020, 3, 13)]
@@ -122,6 +94,12 @@ Impact_0312.columns
 Impact_0312['Cum_Predict'] = Impact_0312.groupby(['stationid'])['Predict'].cumsum()
 Impact_0312['Cum_Relt_Effect'] = Impact_0312['Cum_effect'] / Impact_0312['Cum_Predict']
 Impact_0312.rename({'stationid': 'from_stati'}, axis=1, inplace=True)
+# Calculate the relative impact
+Impact_0312['Relative_Impact'] = ((Impact_0312['Response'] - Impact_0312['Predict']) / Impact_0312['Predict'])
+Impact_0312['Relative_Impact_lower'] = (
+        (Impact_0312['Response'] - Impact_0312['Predict_Lower']) / Impact_0312['Predict_Lower'])
+Impact_0312['Relative_Impact_upper'] = (
+        (Impact_0312['Response'] - Impact_0312['Predict_Upper']) / Impact_0312['Predict_Upper'])
 # Merge with station
 # Merge with features
 All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv', index_col=0)
@@ -134,8 +112,8 @@ All_final = All_final.merge(All_Station_Need, on='from_stati')
 All_final['Time_Index'] = (All_final['Date'] - datetime.datetime(2020, 3, 12)).dt.days
 All_final['Week'] = All_final['Date'].dt.dayofweek
 All_final['Month'] = All_final['Date'].dt.month
-All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_BSTS_0907.csv')
-
+# All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_BSTS_0907.csv')
+All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_BSTS_1003.csv')
 # Impact_0312.to_csv('Impact_0312_tem.csv')
 
 '''
@@ -150,18 +128,13 @@ for jj in list(set(Impact_0312['stationid'])):
     plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Cum_BSTS\\' + str(jj) + '.png')
     plt.close()
 '''
-# Calculate the relative impact
-Impact_0312['Relative_Impact'] = ((Impact_0312['Response'] - Impact_0312['Predict']) / Impact_0312['Predict'])
-Impact_0312['Relative_Impact_lower'] = (
-        (Impact_0312['Response'] - Impact_0312['Predict_Lower']) / Impact_0312['Predict_Lower'])
-Impact_0312['Relative_Impact_upper'] = (
-        (Impact_0312['Response'] - Impact_0312['Predict_Upper']) / Impact_0312['Predict_Upper'])
 Impact_Sta = Impact_0312.groupby(['stationid']).mean()['Relative_Impact'].reset_index()
 # plt.plot(Impact_Sta['Relative_Impact'])
 # sns.distplot(Impact_Sta['Relative_Impact'])
 Impact_Sta.to_csv('Divvy_Impact_Sta.csv')
 
 # Plot the impact for each station
+Impact.columns
 Impact_0101 = Impact[Impact['Date'] >= datetime.datetime(2020, 2, 1)]
 Impact_0101['point.effect'] = Impact_0101['Response'] - Impact_0101['Predict']
 Impact_0101['Relative_Impact'] = ((Impact_0101['Response'] - Impact_0101['Predict']) / Impact_0101['Predict'])
@@ -169,10 +142,28 @@ Impact_0101['Relative_Impact_lower'] = (
         (Impact_0101['Response'] - Impact_0101['Predict_Lower']) / Impact_0101['Predict_Lower'])
 Impact_0101['Relative_Impact_upper'] = (
         (Impact_0101['Response'] - Impact_0101['Predict_Upper']) / Impact_0101['Predict_Upper'])
+Impact_0101['Cum_Predict'] = Impact_0101.groupby(['stationid'])['Predict'].cumsum()
+Impact_0101['Cum_Relt_Effect'] = Impact_0101['Cum_effect'] / Impact_0101['Cum_Predict']
 Impact_Sta_plot = Impact_0101.groupby(['Date']).mean().reset_index()
 
+Impact_0101 = Impact_0101[
+    ~Impact_0101['stationid'].isin(set(Impact_0101[Impact_0101['Cum_Relt_Effect'] > 2]['stationid']))]
 sns.set_palette(sns.color_palette("GnBu_d"))
 plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
+fig, ax = plt.subplots(figsize=(10, 6), nrows=1, ncols=1)
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Cum_Relt_Effect', legend=False, ax=ax,
+             palette=sns.color_palette("YlGnBu", Impact_0101.stationid.unique().shape[0]), alpha=0.2)
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
+ax.plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Cum_Relt_Effect'], color='#eab354', lw=2)
+ax.set_xlabel('Date')
+ax.set_ylabel('Cumulative relative impact')
+plt.tight_layout()
+plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.png', dpi=600)
+plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.svg')
+
+### Stop From Here ####
+
 fig, ax = plt.subplots(figsize=(12, 8), nrows=4, ncols=1, sharex=True)
 ax[0].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 ax[1].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)

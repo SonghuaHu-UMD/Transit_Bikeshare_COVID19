@@ -5,10 +5,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
 import datetime
-import json
-import requests
 from pandas.tseries.holiday import USFederalHolidayCalendar
 import matplotlib.dates as mdates
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 '''
 # Read all trips
@@ -32,22 +32,22 @@ for jj in all_files:
     tem['starttime'] = pd.to_datetime(tem['starttime'])
     tem['stoptime'] = pd.to_datetime(tem['stoptime'])
     alltrips = alltrips.append(tem)
-alltrips.to_pickle('alltrips.chicago_202007')
+alltrips.to_pickle('alltrips_chicago_202007.pkl')
+alltrips.to_csv('alltrips.chicago_202007.csv')
 '''
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
-alltrips = pd.read_pickle(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All\alltrips.chicago_202007')
+alltrips = pd.read_pickle(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All\alltrips_chicago_202007.pkl')
 raw_length = len(alltrips)
-# alltrips.info()
 
-# Duration
+# Drop Outliers: Duration
 alltrips['Duration'] = (alltrips['stoptime'] - alltrips['starttime']).dt.total_seconds()
 alltrips = alltrips[(alltrips['Duration'] > 60) & (alltrips['Duration'] < 60 * 60 * 6)].reset_index(drop=True)
 print('Delete: ' + str(raw_length - len(alltrips)))
 # sns.distplot(alltrips['Duration'])
-# Drop na
+# Drop NA
 alltrips = alltrips.dropna().reset_index(drop=True)
 
-# # Daily count
+# Daily count
 alltrips['startyear'] = alltrips['starttime'].dt.year
 alltrips['startmonth'] = alltrips['starttime'].dt.month
 alltrips['startdate'] = alltrips['starttime'].dt.date
@@ -55,122 +55,24 @@ alltrips['startdate'] = alltrips['starttime'].dt.date
 # Merge with station info
 # Only consider those with trips in 2020
 print('No of Stations in 2020: ' + str(len(set(alltrips.loc[alltrips['startyear'] == 2020, 'from_station_id']))))
-alltrips = alltrips[
-    alltrips['from_station_id'].isin(set(alltrips.loc[alltrips['startyear'] == 2020, 'from_station_id']))].reset_index(
-    drop=True)
-alltrips.isnull().sum()
+alltrips = alltrips[alltrips['from_station_id'].
+    isin(set(alltrips.loc[alltrips['startyear'] == 2020, 'from_station_id']))].reset_index(drop=True)
+# alltrips.isnull().sum()
 Day_count = alltrips.groupby(['from_station_id', 'startdate']).count()['trip_id'].reset_index()
 Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 # Range the date
 Day_count = Day_count.set_index('startdate').groupby(['from_station_id']).resample('d')[
     ['trip_id']].asfreq().reset_index()
 Day_count = Day_count.sort_values(by=['from_station_id', 'startdate'])
-Day_count.isnull().sum()
+# Day_count.isnull().sum()
 Day_count = Day_count.fillna(0)
-'''
-# Read Station in 2016-2017, to get online data
-Stations_online = pd.DataFrame()
-os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Station_All')
-for files in ['Divvy_Stations_2016_Q1Q2.csv', 'Divvy_Stations_2016_Q3.csv', 'Divvy_Stations_2016_Q4.csv',
-              'Divvy_Stations_2017_Q1Q2.csv', 'Divvy_Stations_2017_Q3Q4.csv']:
-    tem = pd.read_csv(files)
-    tem['online_date'] = pd.to_datetime(tem['online_date'])
-    Stations_online = Stations_online.append(tem)
-Stations_online = Stations_online[['id', 'online_date']]
-Stations_online = Stations_online.drop_duplicates(subset='id')
 
-# Read station from gbts, to get all stations
-return_data = requests.get('https://gbfs.divvybikes.com/gbfs/en/station_information.json')
-All_Station = pd.DataFrame(json.loads(return_data.text)['data']['stations'])
-All_Station = All_Station[['station_id', 'station_type', 'name', 'lon', 'lat', 'capacity']]
-All_Station = All_Station[All_Station['station_type'] == 'classic']
-All_Station = All_Station.rename({'station_id': 'id'}, axis=1)
-All_Station['id'] = All_Station['id'].astype(int)
-All_Station = All_Station.drop_duplicates().reset_index(drop=True)
-All_Station = All_Station.merge(Stations_online, on='id', how='left')
-All_Station.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Station.csv')
-'''
-
-# Merge with trips
+# Merge with stations
 All_Station = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Station.csv')
 All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
 All_Station_Need.columns = ['from_station_id', 'from_station_lon', 'from_station_lat', 'from_station_capacity']
 Day_count = Day_count.merge(All_Station_Need, on='from_station_id')
 Day_count = Day_count.sort_values(by=['from_station_id', 'startdate']).reset_index(drop=True)
-
-'''
-# Merge with Weather
-def haversine_array(lat1, lng1, lat2, lng2):
-    lat1, lng1, lat2, lng2 = map(np.radians, (lat1, lng1, lat2, lng2))
-    AVG_EARTH_RADIUS = 6371  # in km
-    lat = lat2 - lat1
-    lng = lng2 - lng1
-    d = np.sin(lat * 0.5) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(lng * 0.5) ** 2
-    h = 2 * AVG_EARTH_RADIUS * np.arcsin(np.sqrt(d))
-    return h
-
-
-# Get the weather station info
-Station_raw = pd.read_csv(r'D:\Transit\Weather\ghcnd-stations1.csv', header=None)
-Station_raw = Station_raw.loc[:, 0:2]
-Station_raw.columns = ['Sid', 'LAT', 'LON']
-# Select the weather station close to transit stop
-Need_Weather = []
-for jj in range(0, len(All_Station)):
-    # print(jj)
-    tem = All_Station.loc[jj]
-    Station_raw['Ref_Lat'] = tem['lat']
-    Station_raw['Ref_Lng'] = tem['lon']
-    Station_raw['Distance'] = haversine_array(Station_raw['Ref_Lat'], Station_raw['Ref_Lng'], Station_raw['LAT'],
-                                              Station_raw['LON'])
-    tem_id = list(Station_raw[Station_raw['Distance'] < 50]['Sid'])
-    Need_Weather.extend(tem_id)
-Need_Weather = set(Need_Weather)
-
-## ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/
-ALL_WEATHER = pd.DataFrame()
-for eachyear in range(2013, 2021):
-    print(eachyear)
-    Weather_raw = pd.read_csv('D:\\Transit\\Weather\\' + str(eachyear) + '.csv.gz', header=None, compression='gzip')
-    Weather_raw = Weather_raw.loc[:, 0:3]
-    Weather_raw.columns = ['Sid', 'date', 'Type', 'Number']
-    Weather_raw = Weather_raw[Weather_raw['Sid'].isin(Need_Weather)]
-    PV_Weather = pd.pivot_table(Weather_raw, values='Number', index=['Sid', 'date'], columns=['Type']).reset_index()
-    tem = PV_Weather.isnull().sum()
-    PV_Weather = PV_Weather[['Sid', 'date', 'PRCP', 'TAVG', 'TMAX', 'TMIN']]
-    # Find the nearest stations for each CT_Info
-    All_Weather = pd.DataFrame()
-    for jj in range(0, len(All_Station)):
-        # print(jj)
-        tem = All_Station.loc[jj]
-        Station_raw['Ref_Lat'] = tem['lat']
-        Station_raw['Ref_Lng'] = tem['lon']
-        Station_raw['Distance'] = haversine_array(Station_raw['Ref_Lat'], Station_raw['Ref_Lng'], Station_raw['LAT'],
-                                                  Station_raw['LON'])
-        # sns.distplot(Station_raw['Distance'])
-        tem_id = Station_raw[Station_raw['Distance'] < 20]['Sid']
-        tem_weather_PRCP = PV_Weather[PV_Weather['Sid'].isin(tem_id)].groupby('date').mean()['PRCP'].reset_index()
-        tem_id = Station_raw[Station_raw['Distance'] < 30]['Sid']
-        tem_weather_T = PV_Weather[PV_Weather['Sid'].isin(tem_id)].groupby('date').mean()[
-            ['TMAX', 'TMIN']].reset_index()
-        tem_weather_PRCP = tem_weather_PRCP.merge(tem_weather_T, on='date', how='outer')
-        tem_weather_PRCP['station_id'] = tem['id']
-        All_Weather = All_Weather.append(tem_weather_PRCP)
-    ALL_WEATHER = ALL_WEATHER.append(All_Weather)
-
-# Unit: Precipitation (tenths of mm); Maximum temperature (tenths of degrees C)
-ALL_WEATHER.isnull().sum()
-ALL_WEATHER['TMAX'] = ALL_WEATHER['TMAX'].fillna(method='ffill').fillna(method='bfill')
-ALL_WEATHER['TMIN'] = ALL_WEATHER['TMIN'].fillna(method='ffill').fillna(method='bfill')
-ALL_WEATHER['PRCP'] = ALL_WEATHER['PRCP'].fillna(0)
-# Change to mm and C
-ALL_WEATHER['TMAX'] = ALL_WEATHER['TMAX'] * 0.1
-ALL_WEATHER['TMIN'] = ALL_WEATHER['TMIN'] * 0.1
-ALL_WEATHER['PRCP'] = ALL_WEATHER['PRCP'] * 0.1
-# plt.plot(ALL_WEATHER['TMIN'], 'ok', alpha=0.2)
-# plt.plot(All_Weather['PRCP'], 'ok', alpha=0.2)
-ALL_WEATHER.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Weather_Chicago_Divvy.csv')
-'''
 
 # Merge with Weather
 ALL_WEATHER = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Weather_Chicago_Divvy.csv',
@@ -185,20 +87,19 @@ Day_count = Day_count.merge(ALL_WEATHER_Whole, on='startdate', how='left')
 Day_count.isnull().sum()
 
 # Is holidays
-cal = USFederalHolidayCalendar()
-holidays = cal.holidays(start='2013-01-01', end='2020-08-01').to_pydatetime()
+holidays = USFederalHolidayCalendar().holidays(start='2013-01-01', end='2020-08-01').to_pydatetime()
 Day_count['Holidays'] = 0
 Day_count.loc[Day_count['startdate'].isin(holidays), 'Holidays'] = 1
 
-# Output to BSTS
+# Output: Daily Counts for each station
 Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy.csv')
-Day_count.columns
-# Total count
+# Output: Daily Counts for Each day
 All_Day_count = Day_count.groupby(['startdate']).sum()['trip_id'].reset_index()
 All_Others = Day_count.groupby(['startdate']).median()[['PRCP', 'TMAX', 'TMIN', 'Holidays']].reset_index()
 All_Day_count = All_Day_count.merge(All_Others, on='startdate')
 All_Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Day_count_Divvy.csv')
 
+'''
 # Plot the figure for each station
 Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy.csv', index_col=0)
 Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
@@ -214,15 +115,66 @@ for jj in list(set(Day_count['from_station_id'])):
     plt.tight_layout()
     plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Time-series-All\\' + str(jj) + '.png')
     plt.close()
+'''
 
-# Some Stations should be dropped
+# Some Stations should be dropped: Based on their time series
 Not_Need_ID = [95, 102, 270, 356, 384, 386, 388, 390, 391, 392, 393, 395, 396, 398, 399, 400, 407, 408, 409, 411, 412,
-               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524] + list(
-    range(528, 589)) + [593, 594, 595, 559, 564, 567, 570, 571, 572, 574, 576, 579, 580, 583, 585, 588, 642, 646, 647,
-                        648, 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683, 666, 673, 672, 662, 661]
+               421, 426, 427, 429, 430, 431, 433, 435, 436, 437, 438, 439, 440, 441, 443, 444, 445, 446, 524] \
+              + list(range(528, 589)) \
+              + [593, 594, 595, 559, 564, 567, 570, 571, 572, 574, 576, 579, 580, 583, 585, 588, 642, 646, 647, 648,
+                 649, 650, 652, 653, 665, 674, 677, 678, 679, 681, 683, 666, 673, 672, 662, 661]
 len(Not_Need_ID)
 Day_count = Day_count[~Day_count['from_station_id'].isin(Not_Need_ID)].reset_index(drop=True)
 Day_count.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')
+
+# Read cases
+cases = pd.read_csv(r'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv')
+cases = cases[(cases['county'] == 'Cook') & (cases['state'] == 'Illinois')].reset_index(drop=True)
+cases['date'] = pd.to_datetime(cases['date'])
+cases.set_index('date', inplace=True)
+cases['cases'] = cases['cases'].diff()
+cases = cases.fillna(0)
+
+# Plot the daily figure
+All_ride = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_Day_count_Divvy.csv')
+All_ride['startdate'] = pd.to_datetime(All_ride['startdate'])
+Rider_2019 = All_ride[(All_ride['startdate'] < datetime.datetime(2020, 1, 1)) & (
+        All_ride['startdate'] >= datetime.datetime(2019, 1, 1))]
+Rider_2019['startdate'] = Rider_2019['startdate'] + datetime.timedelta(days=365)
+All_ride.set_index('startdate', inplace=True)
+Rider_2019.set_index('startdate', inplace=True)
+
+# Plot the daily figure
+plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
+fig, ax = plt.subplots(figsize=(14, 9))  # create a new figure with a default 111 subplot
+ax.plot(All_ride['trip_id'], color='#e4b61a', alpha=0.8, lw=1)
+ax.set_ylabel('Pickups')
+ax.set_xlabel('Date')
+ax.set_ylim(0, 3.5 * 1e4)
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+
+axins = inset_axes(ax, 10, 1.8, loc=9)
+axins.plot(Rider_2019['trip_id'], '-', color='#ac0e28')
+axins.plot(All_ride['trip_id'], color='#111b1e')
+axins.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
+axins.spines['top'].set_visible(False)
+axins.spines['right'].set_visible(False)
+axins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+axins.set_ylabel('Pickups')
+axins.legend(['2019', '2020'], frameon=False)
+
+axtwins = axins.twinx()
+axtwins.yaxis.set_offset_position('right')
+axtwins.bar(cases.index, cases['cases'], color='#111b1e', alpha=0.5)
+axtwins.set_ylim(0, 2500)
+axtwins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+axtwins.set_ylabel('Cases')
+mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#010a1c", lw=2, ls='--')
+
+plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
 
 # For ARCGIS
 Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')

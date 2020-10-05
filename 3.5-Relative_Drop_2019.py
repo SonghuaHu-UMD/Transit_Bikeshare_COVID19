@@ -52,6 +52,7 @@ Rider_2020['Cum_Response'] = Rider_2020.groupby(['stationid'])['Response'].cumsu
 Rider_2020['Cum_Predict'] = Rider_2020.groupby(['stationid'])['Predict'].cumsum()
 Rider_2020['Cum_Relative_Impact'] = (Rider_2020['Cum_Response'] - Rider_2020['Cum_Predict']) / Rider_2020['Cum_Predict']
 
+'''
 for jj in list(set(Rider_2020['stationid'])):
     # jj = 3
     tem = Rider_2020[Rider_2020['stationid'] == jj]
@@ -64,6 +65,7 @@ for jj in list(set(Rider_2020['stationid'])):
     plt.tight_layout()
     plt.savefig('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Cum_2019\\' + str(jj) + '.png')
     plt.close()
+'''
 
 Rider_2020 = Rider_2020.replace([np.inf, -np.inf], np.nan)
 sns.distplot(Rider_2020['Relative_Impact'])
