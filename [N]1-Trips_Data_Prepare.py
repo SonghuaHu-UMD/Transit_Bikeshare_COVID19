@@ -175,12 +175,3 @@ plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.2
 
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
-
-# For ARCGIS
-Day_count = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv')
-Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
-Day_count_2019 = Day_count[Day_count['startdate'].dt.year == 2019]
-Day_count_2019.columns
-Day_count_2019 = Day_count_2019.groupby(['from_station_id']).mean()[
-    ['trip_id', 'from_station_lon', 'from_station_lat', 'from_station_capacity']].reset_index()
-Day_count_2019.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_2019.csv')

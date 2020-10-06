@@ -56,13 +56,14 @@ Rider_2020['Cum_Relative_Impact'] = (Rider_2020['Cum_Response'] - Rider_2020['Cu
     'Cum_Reference']
 Rider_2020['PRCP'] = Rider_2020['PRCP_2020'] - Rider_2020['PRCP_2019']
 Rider_2020['TMAX'] = Rider_2020['TMAX_2020'] - Rider_2020['TMAX_2019']
-
-# Plot relative impact
+# Select need stations
 Impact_0101 = Rider_2020[(~Rider_2020['stationid'].isin(
     set(Rider_2020[(Rider_2020['Cum_Relative_Impact'] > 3) & (Rider_2020['Month'] > 1)]['stationid']))) & (
                                  Rider_2020['Month'] > 1)]
 print(len(set(Impact_0101['stationid'])))
 print(len(set(Rider_2020['stationid'])))
+
+# Plot relative impact
 sns.set_palette(sns.color_palette("GnBu_d"))
 plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
 fig, ax = plt.subplots(figsize=(10, 6), nrows=1, ncols=1)
@@ -135,23 +136,16 @@ All_final = All_final.rename(
      'Distance_City': 'Distance to City Center', 'PopDensity': 'Population Density', 'capacity': 'Capacity'}, axis=1)
 All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
 
-# annot=corr_p.values,
-All_final1 = All_final.groupby(['from_stati']).tail(1)
-All_final1.columns
-corr_matr = All_final1[
-    ['Pct.Male', 'Pct.Age_0_24', 'Pct.Age_25_40', 'Pct.Age_40_65', 'Pct.White', 'Pct.Black', 'Pct.Indian', 'Pct.Asian',
-     'Pct.Unemploy', 'Total_Population', 'Income', 'College', 'Pct.Car', 'Pct.Transit', 'Pct.Bicycle', 'Pct.Walk',
-     'Pct.WorkHome', 'Cumu_Cases', 'Cumu_Death', 'Cumu_Cases_Rate', 'Cumu_Death_Rate', 'COMMERCIAL',
-     'INDUSTRIAL', 'INSTITUTIONAL', 'OPENSPACE', 'OTHERS', 'RESIDENTIAL',
-     'Primary', 'Secondary', 'Minor', 'All_Road_Length', 'Bike_Route', 'Pct.WJob_Goods_Product', 'Pct.WJob_Utilities',
-     'Pct.WJob_OtherServices', 'WTotal_Job_Density', 'Bus_stop_count', 'boardings', 'alightings', 'Distance_Busstop',
-     'Rail_stop_count', 'rides', 'Distance_Rail', 'Near_Bike_station_Count', 'Near_Bike_Capacity',
-     'Distance_Bikestation', 'Near_bike_pickups', 'Distance_City', 'PopDensity', 'EmployDensity',
-     'Response', 'Cum_Relative_Impact', 'Relative_Impact', 'capacity', ]]
-fig, ax = plt.subplots(figsize=(11, 9))
-plt.rcParams.update({'font.size': 10, 'font.family': "Times New Roman"})
-sns.heatmap(All_final.corr(), fmt='',
-            cmap=sns.diverging_palette(240, 130, as_cmap=True),
-            square=True, xticklabels=True, yticklabels=True, linewidths=.5)
-plt.tight_layout()
-plt.savefig('CORR_Divvy.svg')
+# For ARCGIS
+ArcGIS_Divvy_Plot = All_final.groupby('from_stati').tail(1).reset_index(drop=True)
+ArcGIS_Divvy_Plot.columns
+ArcGIS_Divvy_Plot = ArcGIS_Divvy_Plot[['from_stati', 'lon', 'lat', 'Capacity', 'Cum_Relative_Impact', '2019_Avg']]
+ArcGIS_Divvy_Plot.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\ArcGIS_Divvy_Plot.csv')
+
+# For Describe
+All_final.drop_duplicates(subset=['from_stati']).describe().T.to_csv(
+    r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Describe_LandUse.csv')
+All_final.describe().T.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Describe_All.csv')
+
+# Correlation
+All_final.groupby('from_stati').tail(1).corr().to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Corr.csv')

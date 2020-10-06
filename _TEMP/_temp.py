@@ -236,3 +236,23 @@ vif_test <-
   )
 vif(vif_test)
 summary(vif_test)
+
+All_final1 = All_final.groupby(['from_stati']).tail(1)
+All_final1.columns
+corr_matr = All_final1[
+    ['Pct.Male', 'Pct.Age_0_24', 'Pct.Age_25_40', 'Pct.Age_40_65', 'Pct.White', 'Pct.Black', 'Pct.Indian', 'Pct.Asian',
+     'Pct.Unemploy', 'Total_Population', 'Income', 'College', 'Pct.Car', 'Pct.Transit', 'Pct.Bicycle', 'Pct.Walk',
+     'Pct.WorkHome', 'Cumu_Cases', 'Cumu_Death', 'Cumu_Cases_Rate', 'Cumu_Death_Rate', 'COMMERCIAL',
+     'INDUSTRIAL', 'INSTITUTIONAL', 'OPENSPACE', 'OTHERS', 'RESIDENTIAL',
+     'Primary', 'Secondary', 'Minor', 'All_Road_Length', 'Bike_Route', 'Pct.WJob_Goods_Product', 'Pct.WJob_Utilities',
+     'Pct.WJob_OtherServices', 'WTotal_Job_Density', 'Bus_stop_count', 'boardings', 'alightings', 'Distance_Busstop',
+     'Rail_stop_count', 'rides', 'Distance_Rail', 'Near_Bike_station_Count', 'Near_Bike_Capacity',
+     'Distance_Bikestation', 'Near_bike_pickups', 'Distance_City', 'PopDensity', 'EmployDensity',
+     'Response', 'Cum_Relative_Impact', 'Relative_Impact', 'capacity', ]]
+fig, ax = plt.subplots(figsize=(11, 9))
+plt.rcParams.update({'font.size': 10, 'font.family': "Times New Roman"})
+sns.heatmap(All_final.corr(), fmt='',
+            cmap=sns.diverging_palette(240, 130, as_cmap=True),
+            square=True, xticklabels=True, yticklabels=True, linewidths=.5)
+plt.tight_layout()
+plt.savefig('CORR_Divvy.svg')
