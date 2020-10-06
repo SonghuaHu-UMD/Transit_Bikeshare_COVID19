@@ -342,37 +342,4 @@ All_final['alightings'] = All_final['alightings'] / 1e3
 All_final.describe().T
 # Output
 All_final.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv')
-
-# Plot Corr
-All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_BSTS_1003.csv')
-All_final.columns
-All_final1 = All_final.groupby(['from_stati']).tail(1)
-corr_matr = All_final1[
-    ['Pct.Male', 'Pct.Age_0_24', 'Pct.Age_25_40', 'Pct.Age_40_65', 'Pct.White', 'Pct.Black', 'Pct.Indian', 'Pct.Asian',
-     'Pct.Unemploy', 'Total_Population', 'Income', 'College', 'Pct.Car', 'Pct.Transit', 'Pct.Bicycle', 'Pct.Walk',
-     'Pct.WorkHome', 'Cumu_Cases', 'Cumu_Death', 'Cumu_Cases_Rate', 'Cumu_Death_Rate', 'COMMERCIAL',
-     'INDUSTRIAL', 'INSTITUTIONAL', 'OPENSPACE', 'OTHERS', 'RESIDENTIAL',
-     'Primary', 'Secondary', 'Minor', 'All_Road_Length', 'Bike_Route', 'Pct.WJob_Goods_Product', 'Pct.WJob_Utilities',
-     'Pct.WJob_OtherServices', 'WTotal_Job_Density', 'Bus_stop_count', 'boardings', 'alightings', 'Distance_Busstop',
-     'Rail_stop_count', 'rides', 'Distance_Rail', 'Near_Bike_station_Count', 'Near_Bike_Capacity',
-     'Distance_Bikestation', 'Near_bike_pickups', 'Distance_City', 'PopDensity', 'EmployDensity',
-     'Response', 'Cum_Relt_Effect', 'Relative_Impact', 'capacity', ]]
-
-corr_matr.corr().to_csv('Divvy_Corr.csv')
-fig, ax = plt.subplots(figsize=(11, 9))
-plt.rcParams.update({'font.size': 14, 'font.family': "Times New Roman"})
-sns.heatmap(corr_matr.corr(), fmt='',
-            cmap=sns.diverging_palette(240, 130, as_cmap=True),
-            square=True, xticklabels=True, yticklabels=True, linewidths=.5)
-plt.tight_layout()
-
-plt.rcParams.update({'font.size': 20, 'font.family': "Times New Roman"})
-fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(14, 6), sharex='col', sharey='row')
-sns.regplot(x=corr_matr['Near_Bike_Capacity'], y=(corr_matr['Cum_Relt_Effect']), color='#2f4c58',
-            scatter_kws={'s': (corr_matr['Response'] / 5), 'alpha': 0.5}, ax=ax[0][0])
-slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(x=corr_matr['Near_Bike_Capacity'],
-                                                                     y=corr_matr['Cum_Relt_Effect'])
-plt.text(0.7, 0.9, '$R^2 = $' + str(round(r_value ** 2, 3)), horizontalalignment='center',
-         verticalalignment='center', transform=ax[0][0].transAxes)
-
 ################## Calculate all land use/socio-demograhic/road/cases related features ##############################

@@ -8,49 +8,80 @@ import seaborn as sns
 import geopandas as gpd
 from scipy.stats import pearsonr
 import scipy.stats
-
-
-def calculate_pvalues(df):
-    df = df.dropna()._get_numeric_data()
-    dfcols = pd.DataFrame(columns=df.columns)
-    pvalues = dfcols.transpose().join(dfcols, how='outer')
-    for r in df.columns:
-        for c in df.columns:
-            pvalues[r][c] = round(pearsonr(df[r], df[c])[1], 4)
-    return pvalues
-
+from scipy import stats
 
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
 plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
 
 # Calculate the impact from last year
+# _dropOutlier
 ridership_old = pd.read_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv', index_col=0)
 ridership_old.columns
 ridership_old['startdate'] = pd.to_datetime(ridership_old['startdate'])
-# Calculate the direct decrease
-# 2020-3-14 to 2020-4-30 : 2019-3-14 to 2019-4-30
+
+# Calculate the direct decrease compared with 2019
+Rider_2019 = ridership_old[(ridership_old['startdate'] <= datetime.datetime(2019, 12, 31)) & (
+        ridership_old['startdate'] >= datetime.datetime(2019, 1, 1))]
+Rider_2019['Month'] = Rider_2019.startdate.dt.month
+Rider_2019['Day'] = Rider_2019.startdate.dt.day
+Rider_2019.columns
+# Rider_2019['Week'] = Rider_2019.startdate.dt.dayofweek
+Rider_2019 = Rider_2019[['from_station_id', 'trip_id', 'Month', 'Day', 'PRCP', 'TMAX']]
+# Rider_2019_mean = Rider_2019[['from_station_id', 'trip_id', 'Month']].groupby(
+#     ['from_station_id', 'Month', 'Week']).agg(lambda x: stats.trim_mean(x, 0.1)).reset_index()
+# Rider_2019_mean.columns = ['stationid', 'Month', 'Reference']
+Rider_2019.columns = ['stationid', 'Reference', 'Month', 'Day', 'PRCP_2019', 'TMAX_2019']
+Rider_2019_avg = Rider_2019.groupby('stationid').agg(lambda x: stats.trim_mean(x, 0.05))['Reference'].reset_index()
+Rider_2019_avg.columns = ['stationid', '2019_Avg']
+Rider_2019 = Rider_2019.merge(Rider_2019_avg, on='stationid')
+
+# In 2020
 Rider_2020 = ridership_old[(ridership_old['startdate'] < datetime.datetime(2020, 8, 1)) & (
-        ridership_old['startdate'] > datetime.datetime(2020, 3, 12))]
+        ridership_old['startdate'] >= datetime.datetime(2020, 1, 1))]
 Rider_2020['Month'] = Rider_2020.startdate.dt.month
 Rider_2020['Day'] = Rider_2020.startdate.dt.day
 Rider_2020['Week'] = Rider_2020.startdate.dt.dayofweek
-Rider_2020 = Rider_2020[['from_station_id', 'trip_id', 'Month', 'Day', 'Week', 'startdate']]
-Rider_2020.columns = ['stationid', 'Response', 'Month', 'Day', 'Week', 'Date']
+Rider_2020 = Rider_2020[['from_station_id', 'trip_id', 'Month', 'Week', 'Day', 'startdate', 'PRCP', 'TMAX']]
+Rider_2020.columns = ['stationid', 'Response', 'Month', 'Week', 'Day', 'Date', 'PRCP_2020', 'TMAX_2020']
 
-Rider_2019 = ridership_old[(ridership_old['startdate'] < datetime.datetime(2019, 8, 1)) & (
-        ridership_old['startdate'] > datetime.datetime(2019, 3, 12))]
-Rider_2019['Month'] = Rider_2019.startdate.dt.month
-Rider_2019['Day'] = Rider_2019.startdate.dt.day
-Rider_2019 = Rider_2019[['from_station_id', 'trip_id', 'Month', 'Day']]
-Rider_2019.columns = ['stationid', 'Predict', 'Month', 'Day']
-
+# Rider_2020 = Rider_2020.merge(Rider_2019_mean, on=['stationid', 'Month', 'Week'])
 Rider_2020 = Rider_2020.merge(Rider_2019, on=['stationid', 'Month', 'Day'])
-Rider_2020['point.effect'] = Rider_2020['Response'] - Rider_2020['Predict']
-Rider_2020['Relative_Impact'] = (Rider_2020['Response'] - Rider_2020['Predict']) / Rider_2020['Predict']
+Rider_2020.columns
+Rider_2020['point.effect'] = Rider_2020['Response'] - Rider_2020['Reference']
+Rider_2020['Relative_Impact'] = (Rider_2020['Response'] - Rider_2020['Reference']) / Rider_2020['Reference']
 Rider_2020['Cum_effect'] = Rider_2020.groupby(['stationid'])['point.effect'].cumsum()
 Rider_2020['Cum_Response'] = Rider_2020.groupby(['stationid'])['Response'].cumsum()
-Rider_2020['Cum_Predict'] = Rider_2020.groupby(['stationid'])['Predict'].cumsum()
-Rider_2020['Cum_Relative_Impact'] = (Rider_2020['Cum_Response'] - Rider_2020['Cum_Predict']) / Rider_2020['Cum_Predict']
+Rider_2020['Cum_Reference'] = Rider_2020.groupby(['stationid'])['Reference'].cumsum()
+Rider_2020['Cum_Relative_Impact'] = (Rider_2020['Cum_Response'] - Rider_2020['Cum_Reference']) / Rider_2020[
+    'Cum_Reference']
+Rider_2020['PRCP'] = Rider_2020['PRCP_2020'] - Rider_2020['PRCP_2019']
+Rider_2020['TMAX'] = Rider_2020['TMAX_2020'] - Rider_2020['TMAX_2019']
+
+# Plot relative impact
+Impact_0101 = Rider_2020[(~Rider_2020['stationid'].isin(
+    set(Rider_2020[(Rider_2020['Cum_Relative_Impact'] > 3) & (Rider_2020['Month'] > 1)]['stationid']))) & (
+                                 Rider_2020['Month'] > 1)]
+print(len(set(Impact_0101['stationid'])))
+print(len(set(Rider_2020['stationid'])))
+sns.set_palette(sns.color_palette("GnBu_d"))
+plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
+fig, ax = plt.subplots(figsize=(10, 6), nrows=1, ncols=1)
+sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Cum_Relative_Impact', legend=False, ax=ax,
+             palette=sns.color_palette("YlGnBu", Impact_0101.stationid.unique().shape[0]), alpha=0.1)
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
+ax.plot(Impact_0101.groupby('Date').mean()['Cum_Relative_Impact'], color='#eab354', lw=2, label='Mean')
+ax.plot(Impact_0101.groupby('Date').median()['Cum_Relative_Impact'], color='k', lw=2, label='Median')
+ax.plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-0.8, 3], '--',
+        color='#2f4c58', lw=2)
+plt.text(0.25, 0.06, 'WHO Pandemic Claim', horizontalalignment='left', verticalalignment='center',
+         transform=ax.transAxes)
+ax.legend(frameon=False, ncol=2)
+ax.set_xlabel('Date')
+ax.set_ylabel('Cumulative relative change')
+plt.tight_layout()
+plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.png', dpi=600)
+plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.svg')
 
 '''
 for jj in list(set(Rider_2020['stationid'])):
@@ -67,63 +98,12 @@ for jj in list(set(Rider_2020['stationid'])):
     plt.close()
 '''
 
-Rider_2020 = Rider_2020.replace([np.inf, -np.inf], np.nan)
-sns.distplot(Rider_2020['Relative_Impact'])
-Impact_Sta_plot = Rider_2020.groupby(['Date']).mean().reset_index()
-
-sns.set_palette(sns.color_palette("GnBu_d"))
-plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
-fig, ax = plt.subplots(figsize=(12, 8), nrows=4, ncols=1, sharex=True)
-ax[0].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-ax[1].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-ax[2].ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-sns.lineplot(data=Rider_2020, x='Date', hue='stationid', y='Predict', ax=ax[0], legend=False,
-             palette=sns.color_palette("GnBu_d", Rider_2020.stationid.unique().shape[0]), alpha=0.4)
-ax[0].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Predict'], color='#2f4c58', lw=2)
-# ax[0].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.pred.lower'], '--', color='#2f4c58')
-# ax[0].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.pred.upper'], '--', color='#2f4c58')
-ax[0].set_ylabel('Prediction')
-
-sns.lineplot(data=Rider_2020, x='Date', hue='stationid', y='Response', ax=ax[1], legend=False,
-             palette=sns.color_palette("GnBu_d", Rider_2020.stationid.unique().shape[0]), alpha=0.4)
-ax[1].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Response'], color='#2f4c58', lw=2)
-ax[1].set_ylabel('Response')
-
-sns.lineplot(data=Rider_2020, x='Date', hue='stationid', y='point.effect', ax=ax[2], legend=False,
-             palette=sns.color_palette("GnBu_d", Rider_2020.stationid.unique().shape[0]), alpha=0.4)
-ax[2].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30)], [0, 0], '--', color='r')
-ax[2].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['point.effect'], color='#2f4c58', lw=2)
-# ax[2].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-2 * 10e3, 0.2 * 10e3], '--',
-#            color='#2f4c58', lw=2)
-plt.text(0.35, 0.1, 'Pre-Intervention', horizontalalignment='center', verticalalignment='center',
-         transform=ax[2].transAxes)
-plt.text(0.53, 0.1, 'Intervention', horizontalalignment='center', verticalalignment='center',
-         transform=ax[2].transAxes)
-# ax[2].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.effect.lower'], '--', color='#2f4c58')
-# ax[2].plot(Impact_Sta_plot['time'], Impact_Sta_plot['point.effect.upper'], '--', color='#2f4c58')
-ax[2].set_ylabel('Piecewise impact')
-sns.lineplot(data=Rider_2020, x='Date', hue='stationid', y='Relative_Impact', ax=ax[3], legend=False,
-             palette=sns.color_palette("GnBu_d", Rider_2020.stationid.unique().shape[0]), alpha=0.4)
-ax[3].plot(Impact_Sta_plot['Date'], Impact_Sta_plot['Relative_Impact'], color='#2f4c58', lw=2)
-ax[3].plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30)], [0, 0], '--', color='r')
-# ax[3].plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-1, 1], '--', color='#2f4c58', lw=2)
-# ax[3].plot(Impact_Sta_plot['time'], Impact_Sta_plot['Relative_Impact_lower'], '--', color='#2f4c58')
-# ax[3].plot(Impact_Sta_plot['time'], Impact_Sta_plot['Relative_Impact_upper'], '--', color='#2f4c58')
-ax[3].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
-ax[3].xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
-ax[3].set_xlabel('Date')
-ax[3].set_ylabel('Relative impact')
-plt.text(0.35, 0.1, 'Pre-Intervention', horizontalalignment='center', verticalalignment='center',
-         transform=ax[3].transAxes)
-plt.text(0.53, 0.1, 'Intervention', horizontalalignment='center', verticalalignment='center',
-         transform=ax[3].transAxes)
-# plt.tight_layout()
-plt.subplots_adjust(top=0.954, bottom=0.078, left=0.068, right=0.985, hspace=0.233, wspace=0.2)
-
 # To GAM in R
-Rider_2020.head().T
-Rider_2020_New = Rider_2020.copy()
+Rider_2020_New = Impact_0101
+[['stationid', 'Response', 'Month', 'Day', 'Date', 'Reference', 'point.effect', 'Relative_Impact', 'Cum_effect',
+  'Cum_Response', 'Cum_Reference', 'Cum_Relative_Impact']]
 Rider_2020_New = Rider_2020_New.rename({'stationid': 'from_stati'}, axis=1)
+Rider_2020_New = Rider_2020_New.replace([np.inf, -np.inf], np.nan)
 
 # Merge with features
 All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Features_Divvy_0906.csv', index_col=0)
@@ -134,32 +114,24 @@ All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
 All_Station_Need.columns = ['from_stati', 'lon', 'lat', 'capacity']
 All_final = All_final.merge(All_Station_Need, on='from_stati')
 All_final['Time_Index'] = (All_final['Date'] - datetime.datetime(2020, 3, 12)).dt.days
-All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_0907.csv')
-
-# Directly cumsum and minus
-Sum_Impact = Rider_2020.groupby(['stationid']).sum()[['Response', 'Predict']].reset_index()
-Sum_Impact['Cum_Rela_Imp'] = (Sum_Impact['Response'] - Sum_Impact['Predict']) / Sum_Impact['Predict']
-sns.distplot(Sum_Impact['Cum_Rela_Imp'])
-Sum_Impact = Sum_Impact[['stationid', 'Cum_Rela_Imp', 'Predict']]
-Sum_Impact.columns = ['from_stati', 'Cum_Effect', 'Pickups']
-Sum_Impact.describe()
-# Merge with features
-All_final = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R_0907.csv', index_col=0)
-All_final = All_final.drop_duplicates(subset=['from_stati'])
-All_final = All_final.merge(Sum_Impact, on='from_stati')
-All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Avg_final_Divvy_R_0907.csv')
-All_final = All_final.drop(['GEOID', 'AREA', 'from_stati', 'ZIP_CODE', 'OTHERS', ], axis=1)
-All_final.columns
-
-corr_p = calculate_pvalues(All_final)
-corr_p[(corr_p > 0.1)] = 0.1
-corr_p[(corr_p < 0.1) & (corr_p >= 0.05)] = 0.05
-corr_p[(corr_p < 0.05) & (corr_p >= 0.01)] = 0.01
-corr_p[(corr_p < 0.01) & (corr_p >= 0.001)] = 0.001
-corr_p[(corr_p < 0.001) & (corr_p >= 0)] = 0
-corr_p = corr_p.replace({0.1: '', 0.05: '.', 0.01: '*', 0.001: '**', 0: "***"})
+All_final.isnull().sum()[All_final.isnull().sum() > 0]
+All_final = All_final.fillna(0)
+All_final = All_final.rename({'Pct.Male': 'Prop.Male', 'Pct.Age_0_24': 'Prop.Age_0_24'})
+All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
 
 # annot=corr_p.values,
+All_final1 = All_final.groupby(['from_stati']).tail(1)
+All_final1.columns
+corr_matr = All_final1[
+    ['Pct.Male', 'Pct.Age_0_24', 'Pct.Age_25_40', 'Pct.Age_40_65', 'Pct.White', 'Pct.Black', 'Pct.Indian', 'Pct.Asian',
+     'Pct.Unemploy', 'Total_Population', 'Income', 'College', 'Pct.Car', 'Pct.Transit', 'Pct.Bicycle', 'Pct.Walk',
+     'Pct.WorkHome', 'Cumu_Cases', 'Cumu_Death', 'Cumu_Cases_Rate', 'Cumu_Death_Rate', 'COMMERCIAL',
+     'INDUSTRIAL', 'INSTITUTIONAL', 'OPENSPACE', 'OTHERS', 'RESIDENTIAL',
+     'Primary', 'Secondary', 'Minor', 'All_Road_Length', 'Bike_Route', 'Pct.WJob_Goods_Product', 'Pct.WJob_Utilities',
+     'Pct.WJob_OtherServices', 'WTotal_Job_Density', 'Bus_stop_count', 'boardings', 'alightings', 'Distance_Busstop',
+     'Rail_stop_count', 'rides', 'Distance_Rail', 'Near_Bike_station_Count', 'Near_Bike_Capacity',
+     'Distance_Bikestation', 'Near_bike_pickups', 'Distance_City', 'PopDensity', 'EmployDensity',
+     'Response', 'Cum_Relative_Impact', 'Relative_Impact', 'capacity', ]]
 fig, ax = plt.subplots(figsize=(11, 9))
 plt.rcParams.update({'font.size': 10, 'font.family': "Times New Roman"})
 sns.heatmap(All_final.corr(), fmt='',

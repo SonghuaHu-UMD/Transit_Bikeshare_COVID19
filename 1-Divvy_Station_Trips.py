@@ -145,17 +145,17 @@ All_ride.set_index('startdate', inplace=True)
 Rider_2019.set_index('startdate', inplace=True)
 
 # Plot the daily figure
-plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
-fig, ax = plt.subplots(figsize=(14, 9))  # create a new figure with a default 111 subplot
-ax.plot(All_ride['trip_id'], color='#e4b61a', alpha=0.8, lw=1)
+plt.rcParams.update({'font.size': 22, 'font.family': "Times New Roman"})
+fig, ax = plt.subplots(figsize=(14, 8))  # create a new figure with a default 111 subplot
+ax.plot(All_ride['trip_id'], color='#1b96f3', alpha=0.8, lw=1)
 ax.set_ylabel('Pickups')
 ax.set_xlabel('Date')
 ax.set_ylim(0, 3.5 * 1e4)
 ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 
-axins = inset_axes(ax, 10, 1.8, loc=9)
-axins.plot(Rider_2019['trip_id'], '-', color='#ac0e28')
-axins.plot(All_ride['trip_id'], color='#111b1e')
+axins = inset_axes(ax, 8, 1.8, loc=9)
+axins.plot(Rider_2019['trip_id'], '--', color='#1b96f3')
+axins.plot(All_ride['trip_id'], color='#1b96f3')
 axins.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
 axins.spines['top'].set_visible(False)
 axins.spines['right'].set_visible(False)
@@ -165,14 +165,14 @@ axins.legend(['2019', '2020'], frameon=False)
 
 axtwins = axins.twinx()
 axtwins.yaxis.set_offset_position('right')
-axtwins.bar(cases.index, cases['cases'], color='#111b1e', alpha=0.5)
+axtwins.bar(cases.index, cases['cases'], color='#869ba0', alpha=0.5)
 axtwins.set_ylim(0, 2500)
 axtwins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
 axtwins.set_ylabel('Cases')
-mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#010a1c", lw=2, ls='--')
-
+mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#869ba0", lw=2, ls='--')
 plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
+
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
 
