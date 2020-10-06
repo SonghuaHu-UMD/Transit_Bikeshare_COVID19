@@ -116,7 +116,23 @@ All_final = All_final.merge(All_Station_Need, on='from_stati')
 All_final['Time_Index'] = (All_final['Date'] - datetime.datetime(2020, 3, 12)).dt.days
 All_final.isnull().sum()[All_final.isnull().sum() > 0]
 All_final = All_final.fillna(0)
-All_final = All_final.rename({'Pct.Male': 'Prop.Male', 'Pct.Age_0_24': 'Prop.Age_0_24'})
+All_final = All_final.rename(
+    {'Pct.Male': 'Prop.of Male', 'Pct.Age_0_24': 'Prop.of Age_0_24', 'Pct.Age_25_40': 'Prop.of Age_25_40',
+     'Pct.Age_40_65': 'Prop.of Age_40_65', 'Pct.White': 'Prop.of White',
+     'Pct.Black': 'Prop.of Black', 'Pct.Indian': 'Prop.of Indian', 'Pct.Asian': 'Prop.of Asian',
+     'Income': 'Median Income', 'College': 'Prop.of College Degree', 'Cumu_Cases': 'No.of Cases',
+     'Cumu_Death': 'No.of Death', 'Cumu_Cases_Rate': 'Infection Rate',
+     'Cumu_Death_Rate': 'Death Rate', 'COMMERCIAL': 'Prop.of Commercial',
+     'INDUSTRIAL': 'Prop.of Industrial', 'INSTITUTIONAL': 'Prop.of Institutional', 'OPENSPACE': 'Prop.of Openspace',
+     'RESIDENTIAL': 'Prop.of Residential', 'Primary': 'Primary Road Density', 'Secondary': 'Secondary Road Density',
+     'Minor': 'Minor Road Density', 'All_Road_Length': 'Road Density', 'Bike_Route': 'Bike Route Density',
+     'Pct.WJob_Goods_Product': 'Prop.of Goods_Product Jobs', 'Pct.WJob_Utilities': 'Prop.of Utilities Jobs',
+     'Pct.WJob_OtherServices': 'Prop.of Other Jobs', 'WTotal_Job_Density': 'Job Density',
+     'Bus_stop_count': 'No.of Nearby Busstops', 'Distance_Busstop': 'Distance to Nearest Busstop',
+     'Rail_stop_count': 'No.of Nearby Rail Stations', 'Distance_Rail': 'Distance to Nearest Rail Station',
+     'Near_Bike_station_Count': 'No.of Nearby Bike Stations', 'Near_Bike_Capacity': 'Capacity of Nearby Bike Stations',
+     'Distance_Bikestation': 'Distance to Nearest Bike Station', 'Near_bike_pickups': 'Nearby Bike Pickups',
+     'Distance_City': 'Distance to City Center', 'PopDensity': 'Population Density', 'capacity': 'Capacity'}, axis=1)
 All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
 
 # annot=corr_p.values,
