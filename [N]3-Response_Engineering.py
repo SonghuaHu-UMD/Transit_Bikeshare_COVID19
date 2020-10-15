@@ -19,6 +19,20 @@ ridership_old = pd.read_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_coun
 ridership_old.columns
 ridership_old['startdate'] = pd.to_datetime(ridership_old['startdate'])
 
+# Calculate 2019 average during 03/11 to 07/31
+Rider_2019_AVG = ridership_old[(ridership_old['startdate'] <= datetime.datetime(2019, 7, 31)) & (
+        ridership_old['startdate'] >= datetime.datetime(2019, 3, 11))]
+Rider_2019_avg = Rider_2019_AVG.groupby('from_station_id').agg(lambda x: stats.trim_mean(x, 0.05))[
+    'trip_id'].reset_index()
+Rider_2019_avg.columns = ['stationid', '2019_Avg']
+
+# Calculate 2020 average during 03/11 to 07/31
+Rider_2020_AVG = ridership_old[(ridership_old['startdate'] <= datetime.datetime(2020, 7, 31)) & (
+        ridership_old['startdate'] >= datetime.datetime(2020, 3, 11))]
+Rider_2020_avg = Rider_2020_AVG.groupby('from_station_id').agg(lambda x: stats.trim_mean(x, 0.05))[
+    'trip_id'].reset_index()
+Rider_2020_avg.columns = ['stationid', '2020_Avg']
+
 # Calculate the direct decrease compared with 2019
 Rider_2019 = ridership_old[(ridership_old['startdate'] <= datetime.datetime(2019, 12, 31)) & (
         ridership_old['startdate'] >= datetime.datetime(2019, 1, 1))]
@@ -31,9 +45,9 @@ Rider_2019 = Rider_2019[['from_station_id', 'trip_id', 'Month', 'Day', 'PRCP', '
 #     ['from_station_id', 'Month', 'Week']).agg(lambda x: stats.trim_mean(x, 0.1)).reset_index()
 # Rider_2019_mean.columns = ['stationid', 'Month', 'Reference']
 Rider_2019.columns = ['stationid', 'Reference', 'Month', 'Day', 'PRCP_2019', 'TMAX_2019']
-Rider_2019_avg = Rider_2019.groupby('stationid').agg(lambda x: stats.trim_mean(x, 0.05))['Reference'].reset_index()
-Rider_2019_avg.columns = ['stationid', '2019_Avg']
+
 Rider_2019 = Rider_2019.merge(Rider_2019_avg, on='stationid')
+Rider_2019 = Rider_2019.merge(Rider_2020_avg, on='stationid')
 
 # In 2020
 Rider_2020 = ridership_old[(ridership_old['startdate'] < datetime.datetime(2020, 8, 1)) & (
@@ -100,9 +114,10 @@ for jj in list(set(Rider_2020['stationid'])):
 '''
 
 # To GAM in R
-Rider_2020_New = Impact_0101
-[['stationid', 'Response', 'Month', 'Day', 'Date', 'Reference', 'point.effect', 'Relative_Impact', 'Cum_effect',
-  'Cum_Response', 'Cum_Reference', 'Cum_Relative_Impact']]
+Impact_0101.columns
+Rider_2020_New = Impact_0101.copy()
+# [['stationid', 'Response', 'Month', 'Day', 'Date', 'Reference', 'point.effect', 'Relative_Impact', 'Cum_effect',
+#   'Cum_Response', 'Cum_Reference', 'Cum_Relative_Impact']]
 Rider_2020_New = Rider_2020_New.rename({'stationid': 'from_stati'}, axis=1)
 Rider_2020_New = Rider_2020_New.replace([np.inf, -np.inf], np.nan)
 
@@ -134,12 +149,15 @@ All_final = All_final.rename(
      'Near_Bike_station_Count': 'No.of Nearby Bike Stations', 'Near_Bike_Capacity': 'Capacity of Nearby Bike Stations',
      'Distance_Bikestation': 'Distance to Nearest Bike Station', 'Near_bike_pickups': 'Nearby Bike Pickups',
      'Distance_City': 'Distance to City Center', 'PopDensity': 'Population Density', 'capacity': 'Capacity'}, axis=1)
-All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
+All_final.columns
+# All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
+All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1015.csv')
 
 # For ARCGIS
 ArcGIS_Divvy_Plot = All_final.groupby('from_stati').tail(1).reset_index(drop=True)
 ArcGIS_Divvy_Plot.columns
-ArcGIS_Divvy_Plot = ArcGIS_Divvy_Plot[['from_stati', 'lon', 'lat', 'Capacity', 'Cum_Relative_Impact', '2019_Avg']]
+ArcGIS_Divvy_Plot = ArcGIS_Divvy_Plot[
+    ['from_stati', 'lon', 'lat', 'Capacity', 'Cum_Relative_Impact', '2019_Avg', '2020_Avg']]
 ArcGIS_Divvy_Plot.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\ArcGIS_Divvy_Plot.csv')
 
 # For Describe
