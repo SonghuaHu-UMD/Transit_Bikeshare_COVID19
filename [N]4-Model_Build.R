@@ -1,13 +1,36 @@
-pacman::p_load(car, mgcv, psych, dplyr, mgcViz, spdep, sf, tmap, leaps, MASS, ggplot2, metR)
+pacman::p_load(corrplot,data.table,car, mgcv, psych, dplyr, mgcViz, spdep, sf, tmap, leaps, MASS, ggplot2, metR, gtsummary)
 
 # Read data
-dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\All_final_Divvy_R2019_1005.csv')
+dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\All_final_Divvy_R2019_1015.csv')
 dat$from_stati <- as.factor(dat$from_stati)
 dat$X2019_Avg <- round(dat$X2019_Avg)
+dat$X2020_Avg <- round(dat$X2020_Avg)
 dat$Transit.Ridership <- dat$alightings+dat$boardings+dat$rides
 dat$Prop.of.Car <- dat$Pct.Car
 dat$Prop.of.Transit <- dat$Pct.Transit
+dat$Population <- dat$Population.Density*dat$AREA
+dat$Job <- dat$Job.Density*dat$AREA
 colnames(dat)
+
+# Univarate regression
+Need_Loop <- c("X2019_Avg","Cum_Relative_Impact","X2020_Avg","Prop.of.Male","Prop.of.Age_0_24","Prop.of.Age_25_40", "Prop.of.Age_40_65", "Prop.of.White",
+               "Prop.of.Black","Prop.of.Indian", "Prop.of.Asian", "Median.Income", "Prop.of.College.Degree",
+               "No.of.Cases","Infection.Rate","No.of.Death", "Death.Rate","Prop.of.Commercial","Prop.of.Industrial",
+               "Prop.of.Institutional", "Prop.of.Openspace", "Prop.of.Residential", "Primary.Road.Density",
+               "Secondary.Road.Density","Minor.Road.Density","Bike.Route.Density", "Prop.of.Goods_Product.Jobs",
+               "Prop.of.Utilities.Jobs", "Prop.of.Other.Jobs","Job.Density", "boardings", "alightings",
+               "Distance.to.Nearest.Busstop","No.of.Nearby.Rail.Stations", "rides", "Distance.to.Nearest.Rail.Station",
+               "No.of.Nearby.Bike.Stations", "Capacity.of.Nearby.Bike.Stations", "Distance.to.Nearest.Bike.Station",
+               "Nearby.Bike.Pickups", "Distance.to.City.Center", "Population.Density", "Capacity","Prop.of.Car",
+               "Prop.of.Transit","Pct.Bicycle","Pct.Walk", "Pct.WorkHome","Transit.Ridership","Population","Job")
+tbl_uv_ex1 <- tbl_uvregression(dat[Need_Loop], method = glm, y = X2019_Avg, method.args = list(family = 'poisson'),
+                               exponentiate =FALSE)
+cor_matrix <- cor(dat[, Need_Loop], method = "pearson", use = "complete.obs")
+cor_matrix_Y <- cor_matrix[,c('X2019_Avg','X2020_Avg','Cum_Relative_Impact')]
+corrplot(cor_matrix_Y, method="color")
+#lapply( dat[,Need_Loop], function(x) summary(lm(dat$X2019_Avg ~ x)) )
+#Fits <- data.table(dat[,Need_Loop])[, .(MyFits = lapply(.SD, function(x) summary(lm(dat$X2019_Avg ~ x)))), .SDcols = -1]
+#Fits[, lapply(MyFits, coef)]
 
 # Plot interaction
 # Control others
@@ -27,8 +50,7 @@ for (var in Need_Loop){
     geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y=var,title ='') + theme(text = element_text(size=20))
   print(pl, pages = 1)
   ggsave(paste(var,"_Control.png"), units="in", width=7, height=5, dpi=600)
-  ggsave(paste(var,"_Control.svg"), units="in", width=7, height=5)
-}
+  ggsave(paste(var,"_Control.svg"), units="in", width=7, height=5) }
 
 # Without Control
 Need_Loop <- c("Prop.of.Male","Prop.of.Age_0_24","Prop.of.Age_25_40", "Prop.of.Age_40_65", "Prop.of.White",
@@ -52,8 +74,7 @@ for (var in Need_Loop){
     geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y=var,title ='') + theme(text = element_text(size=20))
   print(pl, pages = 1)
   ggsave(paste(var,"_Single.png"), units="in", width=7, height=5, dpi=600)
-  ggsave(paste(var,"_Single.svg"), units="in", width=7, height=5)
-}
+  ggsave(paste(var,"_Single.svg"), units="in", width=7, height=5) }
 
 # Cross-Section Estimation
 # Find the last row
@@ -62,11 +83,19 @@ dat_avg <- dat %>% group_by(from_stati) %>% slice(c(n())) %>% ungroup()
 # 2019 Average Pickup Model
 GAM_RES1 <- mgcv::gam(X2019_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Transit +
-  Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace + Prop.of.Residential +
+  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
   Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
 summary(GAM_RES1)
+
+# 2020 Average Pickup Model
+GAM_RES11 <- mgcv::gam(X2020_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
+  Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
+  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  +
+  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
+  Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
+summary(GAM_RES11)
+
 # The Accumulative Relative Drop Model
 GAM_RES2 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
@@ -98,10 +127,9 @@ vif(vif_test)
 summary(vif_test)
 
 vif_test <-
-  lm(X2019_Avg ~ Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
+  lm(X2019_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Pct.Car + Pct.Transit +
-  Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace + Prop.of.Residential +
+  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace + Prop.of.Residential +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
   Capacity, data = dat_avg)
 vif(vif_test)
