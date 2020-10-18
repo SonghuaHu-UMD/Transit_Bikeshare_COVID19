@@ -10,7 +10,10 @@ dat$Prop.of.Car <- dat$Pct.Car
 dat$Prop.of.Transit <- dat$Pct.Transit
 dat$Population <- dat$Population.Density*dat$AREA
 dat$Job <- dat$Job.Density*dat$AREA
-colnames(dat)
+dat$Prop.of.Walk_Bike <- dat$Pct.Walk+dat$Pct.Bicycle
+#colnames(dat)
+# Find the last row
+dat_avg <- dat %>% group_by(from_stati) %>% slice(c(n())) %>% ungroup()
 
 # Univarate regression
 Need_Loop <- c("X2019_Avg","Cum_Relative_Impact","X2020_Avg","Prop.of.Male","Prop.of.Age_0_24","Prop.of.Age_25_40", "Prop.of.Age_40_65", "Prop.of.White",
@@ -23,14 +26,11 @@ Need_Loop <- c("X2019_Avg","Cum_Relative_Impact","X2020_Avg","Prop.of.Male","Pro
                "No.of.Nearby.Bike.Stations", "Capacity.of.Nearby.Bike.Stations", "Distance.to.Nearest.Bike.Station",
                "Nearby.Bike.Pickups", "Distance.to.City.Center", "Population.Density", "Capacity","Prop.of.Car",
                "Prop.of.Transit","Pct.Bicycle","Pct.Walk", "Pct.WorkHome","Transit.Ridership","Population","Job")
-tbl_uv_ex1 <- tbl_uvregression(dat[Need_Loop], method = glm, y = X2019_Avg, method.args = list(family = 'poisson'),
+tbl_uv_ex1 <- tbl_uvregression(dat_avg[Need_Loop], method = glm, y = X2019_Avg, method.args = list(family = 'poisson'),
                                exponentiate =FALSE)
-cor_matrix <- cor(dat[, Need_Loop], method = "pearson", use = "complete.obs")
+cor_matrix <- cor(dat_avg[, Need_Loop], method = "pearson", use = "complete.obs")
 cor_matrix_Y <- cor_matrix[,c('X2019_Avg','X2020_Avg','Cum_Relative_Impact')]
 corrplot(cor_matrix_Y, method="color")
-#lapply( dat[,Need_Loop], function(x) summary(lm(dat$X2019_Avg ~ x)) )
-#Fits <- data.table(dat[,Need_Loop])[, .(MyFits = lapply(.SD, function(x) summary(lm(dat$X2019_Avg ~ x)))), .SDcols = -1]
-#Fits[, lapply(MyFits, coef)]
 
 # Plot interaction
 # Control others
@@ -50,7 +50,7 @@ for (var in Need_Loop){
     geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y=var,title ='') + theme(text = element_text(size=20))
   print(pl, pages = 1)
   ggsave(paste(var,"_Control.png"), units="in", width=7, height=5, dpi=600)
-  ggsave(paste(var,"_Control.svg"), units="in", width=7, height=5) }
+  ggsave(paste(var,"_Control.svg"), units="in", width=7, height=5)}
 
 # Without Control
 Need_Loop <- c("Prop.of.Male","Prop.of.Age_0_24","Prop.of.Age_25_40", "Prop.of.Age_40_65", "Prop.of.White",
@@ -74,36 +74,39 @@ for (var in Need_Loop){
     geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y=var,title ='') + theme(text = element_text(size=20))
   print(pl, pages = 1)
   ggsave(paste(var,"_Single.png"), units="in", width=7, height=5, dpi=600)
-  ggsave(paste(var,"_Single.svg"), units="in", width=7, height=5) }
+  ggsave(paste(var,"_Single.svg"), units="in", width=7, height=5)}
 
 # Cross-Section Estimation
-# Find the last row
-dat$from_stati <- as.numeric(dat$from_stati)
-dat_avg <- dat %>% group_by(from_stati) %>% slice(c(n())) %>% ungroup()
 # 2019 Average Pickup Model
 GAM_RES1 <- mgcv::gam(X2019_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  +
-  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
+  Prop.of.Car  + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
-summary(GAM_RES1)
+GAM_RES1_S<-summary(GAM_RES1)
+write.csv(GAM_RES1_S$p.table, file = '2019_AVG_GAM_Linear.csv')
+write.csv(GAM_RES1_S$s.table, file = '2019_AVG_GAM_NONLinear.csv')
 
 # 2020 Average Pickup Model
 GAM_RES11 <- mgcv::gam(X2020_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  +
-  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
-  Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
-summary(GAM_RES11)
+  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
+  Capacity + No.of.Cases + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
+GAM_RES11_S<-summary(GAM_RES11)
+write.csv(GAM_RES11_S$p.table, file = '2020_AVG_GAM_Linear.csv')
+write.csv(GAM_RES11_S$s.table, file = '2020_AVG_GAM_NONLinear.csv')
 
 # The Accumulative Relative Drop Model
 GAM_RES2 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Transit +
-  Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace + Prop.of.Residential +
-  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +  Distance.to.City.Center +
-  Capacity + No.of.Cases + Infection.Rate + ti(lat, lon), data = dat_avg, family = c("gaussian"), method = "REML")
-summary(GAM_RES2)
+  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
+  Capacity + No.of.Cases  + ti(lat, lon), data = dat_avg, family = c("gaussian"), method = "REML")
+GAM_RES2_S<-summary(GAM_RES2)
+write.csv(GAM_RES2_S$p.table, file = 'Relat_AVG_GAM_Linear.csv')
+write.csv(GAM_RES2_S$s.table, file = 'Relat_AVG_GAM_NONLinear.csv')
+
 # Start to Drop Date Model
 dat_start <- dat[dat$Date == '2020-03-10',]
 GAM_RES3 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +

@@ -115,6 +115,7 @@ Socid_Raw = Socid_Raw[
 # Socid_Raw.isnull().sum()
 # fill na: 40890 40930
 Socid_Raw_Final = Socid_Raw.fillna(Socid_Raw.mean())
+Socid_Raw_Final.to_excel('Socid_Raw_Final_Chicago.xls')
 
 # Read ZIPCODE
 ZIPCODE = gpd.read_file(r'D:\Transit\GIS\ZIPCODEUS.shp')
