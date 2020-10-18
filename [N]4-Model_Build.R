@@ -5,12 +5,8 @@ dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\All_final_Divvy_R2
 dat$from_stati <- as.factor(dat$from_stati)
 dat$X2019_Avg <- round(dat$X2019_Avg)
 dat$X2020_Avg <- round(dat$X2020_Avg)
-dat$Transit.Ridership <- dat$alightings+dat$boardings+dat$rides
-dat$Prop.of.Car <- dat$Pct.Car
-dat$Prop.of.Transit <- dat$Pct.Transit
 dat$Population <- dat$Population.Density*dat$AREA
 dat$Job <- dat$Job.Density*dat$AREA
-dat$Prop.of.Walk_Bike <- dat$Pct.Walk+dat$Pct.Bicycle
 #colnames(dat)
 # Find the last row
 dat_avg <- dat %>% group_by(from_stati) %>% slice(c(n())) %>% ungroup()
@@ -80,7 +76,7 @@ for (var in Need_Loop){
 # 2019 Average Pickup Model
 GAM_RES1 <- mgcv::gam(X2019_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car  + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Prop.of.Car  + Prop.of.Transit + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
 GAM_RES1_S<-summary(GAM_RES1)
@@ -90,7 +86,7 @@ write.csv(GAM_RES1_S$s.table, file = '2019_AVG_GAM_NONLinear.csv')
 # 2020 Average Pickup Model
 GAM_RES11 <- mgcv::gam(X2020_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Prop.of.Car + Prop.of.Transit +Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + No.of.Cases + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
 GAM_RES11_S<-summary(GAM_RES11)
@@ -100,7 +96,7 @@ write.csv(GAM_RES11_S$s.table, file = '2020_AVG_GAM_NONLinear.csv')
 # The Accumulative Relative Drop Model
 GAM_RES2 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
   Prop.of.College.Degree + Prop.of.Utilities.Jobs + Prop.of.Goods_Product.Jobs + Population.Density + Job.Density +
-  Prop.of.Car + Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
+  Prop.of.Car + Prop.of.Transit +Prop.of.Commercial + Prop.of.Industrial + Prop.of.Institutional + Prop.of.Openspace  + Prop.of.Residential +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + No.of.Cases  + ti(lat, lon), data = dat_avg, family = c("gaussian"), method = "REML")
 GAM_RES2_S<-summary(GAM_RES2)

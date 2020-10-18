@@ -76,6 +76,8 @@ Impact_0101 = Rider_2020[(~Rider_2020['stationid'].isin(
                                  Rider_2020['Month'] > 1)]
 print(len(set(Impact_0101['stationid'])))
 print(len(set(Rider_2020['stationid'])))
+Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
+        Impact_0101['Date'] >= datetime.datetime(2020, 3, 11))]['Cum_Relative_Impact'].describe()
 
 # Plot relative impact
 sns.set_palette(sns.color_palette("GnBu_d"))
@@ -88,6 +90,8 @@ ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
 ax.plot(Impact_0101.groupby('Date').mean()['Cum_Relative_Impact'], color='#eab354', lw=2, label='Mean')
 ax.plot(Impact_0101.groupby('Date').median()['Cum_Relative_Impact'], color='k', lw=2, label='Median')
 ax.plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-0.8, 3], '--',
+        color='#2f4c58', lw=2)
+ax.plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 31)], [0, 0], '--',
         color='#2f4c58', lw=2)
 plt.text(0.25, 0.06, 'WHO Pandemic Claim', horizontalalignment='left', verticalalignment='center',
          transform=ax.transAxes)
@@ -148,8 +152,12 @@ All_final = All_final.rename(
      'Rail_stop_count': 'No.of Nearby Rail Stations', 'Distance_Rail': 'Distance to Nearest Rail Station',
      'Near_Bike_station_Count': 'No.of Nearby Bike Stations', 'Near_Bike_Capacity': 'Capacity of Nearby Bike Stations',
      'Distance_Bikestation': 'Distance to Nearest Bike Station', 'Near_bike_pickups': 'Nearby Bike Pickups',
-     'Distance_City': 'Distance to City Center', 'PopDensity': 'Population Density', 'capacity': 'Capacity'}, axis=1)
+     'Distance_City': 'Distance to City Center', 'PopDensity': 'Population Density', 'capacity': 'Capacity',
+     'Pct.Car': 'Prop.of.Car', 'Pct.Transit': 'Prop.of.Transit'}, axis=1)
 All_final.columns
+All_final['Transit.Ridership'] = All_final.alightings + All_final.boardings + All_final.rides
+All_final["Prop.of.Walk_Bike"] = All_final['Pct.Bicycle'] + All_final['Pct.Walk']
+
 # All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1005.csv')
 All_final.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\All_final_Divvy_R2019_1015.csv')
 
@@ -161,7 +169,7 @@ ArcGIS_Divvy_Plot = ArcGIS_Divvy_Plot[
 ArcGIS_Divvy_Plot.to_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\ArcGIS_Divvy_Plot.csv')
 
 # For Describe
-All_final.drop_duplicates(subset=['from_stati']).describe().T.to_csv(
+All_final.groupby('from_stati').tail(1).describe().T.to_csv(
     r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Describe_LandUse.csv')
 All_final.describe().T.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Describe_All.csv')
 
