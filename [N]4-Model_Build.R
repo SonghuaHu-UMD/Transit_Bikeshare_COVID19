@@ -15,7 +15,7 @@ dat$Prop.of.Walk_Bike <- dat$Pct.Walk+dat$Pct.Bicycle
 # Find the last row
 dat_avg <- dat %>% group_by(from_stati) %>% slice(c(n())) %>% ungroup()
 
-# Univarate regression
+# Play: Univarate regression
 Need_Loop <- c("X2019_Avg","Cum_Relative_Impact","X2020_Avg","Prop.of.Male","Prop.of.Age_0_24","Prop.of.Age_25_40", "Prop.of.Age_40_65", "Prop.of.White",
                "Prop.of.Black","Prop.of.Indian", "Prop.of.Asian", "Median.Income", "Prop.of.College.Degree",
                "No.of.Cases","Infection.Rate","No.of.Death", "Death.Rate","Prop.of.Commercial","Prop.of.Industrial",
