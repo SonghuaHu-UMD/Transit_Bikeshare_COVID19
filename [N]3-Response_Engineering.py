@@ -76,6 +76,7 @@ Impact_0101 = Rider_2020[(~Rider_2020['stationid'].isin(
                                  Rider_2020['Month'] > 1)]
 print(len(set(Impact_0101['stationid'])))
 print(len(set(Rider_2020['stationid'])))
+# For describe
 Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
         Impact_0101['Date'] >= datetime.datetime(2020, 3, 11))]['Cum_Relative_Impact'].describe()
 
@@ -175,3 +176,5 @@ All_final.describe().T.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Descri
 
 # Correlation
 All_final.groupby('from_stati').tail(1).corr().to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Corr.csv')
+
+# Travel features describe

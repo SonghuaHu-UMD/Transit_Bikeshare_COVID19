@@ -5,6 +5,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import glob
 import datetime
+import igraph
+import geopandas
 from pandas.tseries.holiday import USFederalHolidayCalendar
 import matplotlib.dates as mdates
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
@@ -46,6 +48,90 @@ print('Delete: ' + str(raw_length - len(alltrips)))
 # sns.distplot(alltrips['Duration'])
 # Drop NA
 alltrips = alltrips.dropna().reset_index(drop=True)
+
+# Plot Duration, distance
+alltrips.columns
+Compare_trips = alltrips[((alltrips['starttime'] <= datetime.datetime(2020, 7, 31)) & (
+        alltrips['starttime'] >= datetime.datetime(2020, 3, 11))) | (
+                                 (alltrips['starttime'] <= datetime.datetime(2019, 7, 31)) & (
+                                 alltrips['starttime'] >= datetime.datetime(2019, 3, 11)))]
+Compare_trips['Hour'] = Compare_trips['starttime'].dt.hour
+Compare_trips['Week'] = Compare_trips['starttime'].dt.dayofweek
+Compare_trips['Month'] = Compare_trips['starttime'].dt.month
+
+# Merge with stations
+All_Station = pd.read_csv('D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Station.csv')
+All_Station_Need = All_Station[['id', 'lon', 'lat', 'capacity']]
+All_Station_Need.columns = ['from_station_id', 'from_station_lon', 'from_station_lat', 'from_station_capacity']
+Compare_trips = Compare_trips.merge(All_Station_Need, on='from_station_id')
+All_Station_Need.columns = ['to_station_id', 'to_station_lon', 'to_station_lat', 'to_station_capacity']
+Compare_trips = Compare_trips.merge(All_Station_Need, on='to_station_id')
+
+Compare_trips.loc[(alltrips['starttime'] <= datetime.datetime(2020, 7, 31)) & (
+        alltrips['starttime'] >= datetime.datetime(2020, 3, 11)), 'Type'] = 2020
+Compare_trips.loc[(alltrips['starttime'] <= datetime.datetime(2019, 7, 31)) & (
+        alltrips['starttime'] >= datetime.datetime(2019, 3, 11)), 'Type'] = 2019
+Compare_trips['Duration'] = Compare_trips['Duration'] / 60
+Compare_trips = Compare_trips[Compare_trips['Duration'] < 200]
+g = sns.FacetGrid(Compare_trips[0:len(Compare_trips):100], hue="Type", palette="Accent", legend_out=False, size=5,
+                  aspect=1.2)
+g = (g.map(sns.distplot, "Duration", hist=True, kde=True, hist_kws=dict(alpha=0.8))).add_legend()
+
+
+# Temporal pattern
+def plot_temp_pattern(Type_Name):
+    hour_pattern = Compare_trips.groupby(['Type', Type_Name]).count().reset_index()
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.plot(hour_pattern[hour_pattern['Type'] == 2019][Type_Name],
+            hour_pattern[hour_pattern['Type'] == 2019]['trip_id'], '-o', color='green', alpha=0.5, markersize=7)
+    ax.plot(hour_pattern[hour_pattern['Type'] == 2020][Type_Name],
+            hour_pattern[hour_pattern['Type'] == 2020]['trip_id'], '-<', color='purple', alpha=0.5, markersize=7)
+    # ax.plot([17, 17], [0, 1], '--', color='gray')
+    # ax.plot([8, 8], [0, 1], '--', color='gray')
+    plt.legend([2019, 2020])
+    plt.xlabel(Type_Name)
+    plt.ylabel('Trips')
+    plt.tight_layout()
+
+
+plot_temp_pattern('Hour')
+plot_temp_pattern('Week')
+plot_temp_pattern('Month')
+
+# Community
+OD_Bike = Compare_trips[Compare_trips['Type'] == 2020].groupby(['from_station_id', 'to_station_id']).count()[
+    'trip_id'].reset_index()
+OD_Bike = OD_Bike[OD_Bike['from_station_id'] != OD_Bike['to_station_id']]
+tuples = [tuple(x) for x in OD_Bike.values]
+OD_Graph = igraph.Graph.TupleList(tuples, directed=True, edge_attrs=['trip_id'])
+communities = OD_Graph.community_infomap(edge_weights='trip_id')
+authority_score = OD_Graph.authority_score(weights='trip_id')
+hub_score = OD_Graph.hub_score(weights='trip_id')
+OD_label = pd.DataFrame(
+    {'from_stati': OD_Graph.vs['name'], 'Label': communities.membership, 'Authority': authority_score,
+     'Hub': hub_score})
+print('No. of Cluster: ' + str(len(set(OD_label['Label']))))
+
+OD_Bike_Plot = Compare_trips[Compare_trips['Type'] == 2019].groupby(
+    ['from_station_id', 'from_station_lon', 'from_station_lat', 'to_station_id', 'to_station_lon',
+     'to_station_lat']).count()['trip_id'].reset_index()
+
+# Plot Spatial
+poly = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Divvy_Station.shp')
+poly = poly.merge(OD_label, on='from_stati')
+fig, ax = plt.subplots(figsize=(12, 8))
+poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.2, edgecolor='k',
+          markersize=poly['trip_id'] / (max(poly['trip_id']) / 400),
+          legend=False, legend_kwds={'bbox_to_anchor': (.3, 1.05), 'fontsize': 4, 'frameon': False}, ax=ax)
+OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['trip_id'] > 100].reset_index(drop=True)
+OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['from_station_id'] != OD_Bike_Plot['to_station_id']]
+for kk in range(0, len(OD_Bike_Plot)):
+    ax.annotate('', xy=(OD_Bike_Plot.loc[kk, 'from_station_lon'], OD_Bike_Plot.loc[kk, 'from_station_lat']),
+                xytext=(OD_Bike_Plot.loc[kk, 'to_station_lon'], OD_Bike_Plot.loc[kk, 'to_station_lat']),
+                arrowprops={'arrowstyle': '->',
+                            'lw': OD_Bike_Plot.loc[kk, 'trip_id'] / (max(OD_Bike_Plot['trip_id']) / 5),
+                            'color': 'orange', 'alpha': 0.5, 'connectionstyle': "arc3,rad=-0.4"}, va='center')
+plt.tight_layout()
 
 # Daily count
 alltrips['startyear'] = alltrips['starttime'].dt.year
