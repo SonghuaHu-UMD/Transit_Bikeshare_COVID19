@@ -11,7 +11,7 @@ import scipy.stats
 from scipy import stats
 
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
-plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
+# plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
 
 # Calculate the impact from last year
 # _dropOutlier
@@ -81,27 +81,29 @@ Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
         Impact_0101['Date'] >= datetime.datetime(2020, 3, 11))]['Cum_Relative_Impact'].describe()
 
 # Plot relative impact
-sns.set_palette(sns.color_palette("GnBu_d"))
-plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
-fig, ax = plt.subplots(figsize=(10, 6), nrows=1, ncols=1)
-sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Cum_Relative_Impact', legend=False, ax=ax,
-             palette=sns.color_palette("YlGnBu", Impact_0101.stationid.unique().shape[0]), alpha=0.1)
-ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
-ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
-ax.plot(Impact_0101.groupby('Date').mean()['Cum_Relative_Impact'], color='#eab354', lw=2, label='Mean')
-ax.plot(Impact_0101.groupby('Date').median()['Cum_Relative_Impact'], color='k', lw=2, label='Median')
-ax.plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-0.8, 3], '--',
-        color='#2f4c58', lw=2)
-ax.plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 31)], [0, 0], '--',
-        color='#2f4c58', lw=2)
-plt.text(0.25, 0.06, 'WHO Pandemic Claim', horizontalalignment='left', verticalalignment='center',
-         transform=ax.transAxes)
-ax.legend(frameon=False, ncol=2)
-ax.set_xlabel('Date')
-ax.set_ylabel('Cumulative relative change')
-plt.tight_layout()
-plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.png', dpi=600)
-plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3.svg')
+with plt.style.context(['science', 'ieee']):
+    # sns.set_palette(sns.color_palette("GnBu_d"))
+    # plt.rcParams.update({'font.size': 18, 'font.family': "Times New Roman"})
+    fig, ax = plt.subplots(figsize=(5, 3.3))  # figsize=(10, 6), nrows=1, ncols=1
+    sns.lineplot(data=Impact_0101, x='Date', hue='stationid', y='Cum_Relative_Impact', legend=False, ax=ax,
+                 alpha=0.1, palette=sns.color_palette("ch:s=.25,rot=-.25", Impact_0101.stationid.unique().shape[0]),
+                 lw=0.3)  # palette=sns.color_palette("YlGnBu", Impact_0101.stationid.unique().shape[0]),
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))
+    ax.plot(Impact_0101.groupby('Date').mean()['Cum_Relative_Impact'], lw=1, label='Mean')
+    ax.plot(Impact_0101.groupby('Date').median()['Cum_Relative_Impact'], lw=1, label='Median')
+    ax.plot([datetime.datetime(2020, 3, 11), datetime.datetime(2020, 3, 11)], [-0.8, 3], '--', lw=0.6,
+            color='#2f4c58')
+    ax.plot([datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 31)], [0, 0], '--', lw=0.6,
+            color='#2f4c58')
+    plt.text(0.25, 0.06, 'WHO Pandemic Claim', horizontalalignment='left', verticalalignment='center',
+             transform=ax.transAxes)
+    ax.legend(frameon=False, ncol=2)
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Cumulative relative change')
+    plt.tight_layout()
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3-te.png', dpi=600)
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3-te.svg')
 
 '''
 for jj in list(set(Rider_2020['stationid'])):

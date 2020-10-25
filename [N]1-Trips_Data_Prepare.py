@@ -11,6 +11,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 import matplotlib.dates as mdates
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import contextily as ctx
 
 
 def haversine_array(lat1, lng1, lat2, lng2):
@@ -98,33 +99,40 @@ Compare_trips.groupby(['usertype', 'Type']).count()
 Compare_trips.loc[Compare_trips['from_station_id'] == Compare_trips['to_station_id'], 'loop'] = 1
 Compare_trips.loc[Compare_trips['from_station_id'] != Compare_trips['to_station_id'], 'loop'] = 0
 Compare_trips.groupby(['loop', 'Type']).count()
-# Plot duration and distance
-Compare_trips1 = Compare_trips[Compare_trips['Duration'] < 200]
-g = sns.FacetGrid(Compare_trips1, hue="Type", palette="Accent", legend_out=False, size=5, aspect=1.2)
-g = (g.map(sns.distplot, "Duration", hist=True, kde=True, hist_kws=dict(alpha=0.8))).add_legend()
-g = sns.FacetGrid(Compare_trips, hue="Type", palette="Accent", legend_out=False, size=5, aspect=1.2)
-g = (g.map(sns.distplot, "Distance", hist=True, kde=True, hist_kws=dict(alpha=0.8))).add_legend()
+
+
+# # Plot duration and distance
+# Compare_trips1 = Compare_trips[Compare_trips['Duration'] < 200]
+# g = sns.FacetGrid(Compare_trips1, hue="Type", palette="Accent", legend_out=False, size=3, aspect=1.2)
+# g = (g.map(sns.distplot, "Duration", hist=True, kde=True, hist_kws=dict(alpha=0.8))).add_legend()
+# g = sns.FacetGrid(Compare_trips, hue="Type", palette="Accent", legend_out=False, size=5, aspect=1.2)
+# g = (g.map(sns.distplot, "Distance", hist=True, kde=True, hist_kws=dict(alpha=0.8))).add_legend()
 
 
 # Temporal pattern
 def plot_temp_pattern(Type_Name):
-    hour_pattern = Compare_trips.groupby(['Type', Type_Name]).count().reset_index()
-    fig, ax = plt.subplots(figsize=(7, 6))
-    ax.plot(hour_pattern[hour_pattern['Type'] == 2019][Type_Name],
-            hour_pattern[hour_pattern['Type'] == 2019]['trip_id'], '-o', color='green', alpha=0.5, markersize=7)
-    ax.plot(hour_pattern[hour_pattern['Type'] == 2020][Type_Name],
-            hour_pattern[hour_pattern['Type'] == 2020]['trip_id'], '-<', color='purple', alpha=0.5, markersize=7)
-    # ax.plot([17, 17], [0, 1], '--', color='gray')
-    # ax.plot([8, 8], [0, 1], '--', color='gray')
-    plt.legend([2019, 2020])
-    plt.xlabel(Type_Name)
-    plt.ylabel('Trips')
-    plt.tight_layout()
+    with plt.style.context(['science', 'ieee']):
+        hour_pattern = Compare_trips.groupby(['Type', Type_Name]).count().reset_index()
+        fig, ax = plt.subplots()  # figsize=(7, 6)
+        ax.plot(hour_pattern[hour_pattern['Type'] == 2019][Type_Name],
+                hour_pattern[hour_pattern['Type'] == 2019]['trip_id'])  # '-o', color='green', alpha=0.5, markersize=7
+        ax.plot(hour_pattern[hour_pattern['Type'] == 2020][Type_Name],
+                hour_pattern[hour_pattern['Type'] == 2020]['trip_id'])  # '-<', color='purple', alpha=0.5, markersize=7
+        # ax.plot([17, 17], [0, 1], '--', color='gray')
+        # ax.plot([8, 8], [0, 1], '--', color='gray')
+        ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+        ax.autoscale(tight=True)
+        plt.legend([2019, 2020])
+        plt.xlabel(Type_Name)
+        plt.ylabel('Trips')
+        # plt.tight_layout()
+        fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\' + Type_Name + '.jpg', dpi=600)
+        fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\' + Type_Name + '.svg')
 
 
-plot_temp_pattern('Hour')
-plot_temp_pattern('Week')
-plot_temp_pattern('Month')
+# plot_temp_pattern('Hour')
+# plot_temp_pattern('Week')
+# plot_temp_pattern('Month')
 
 # Diameter
 OD_Bike = Compare_trips[Compare_trips['Type'] == 2020].drop_duplicates(subset=['from_station_id', 'to_station_id'])[
@@ -167,10 +175,17 @@ print('No. of Cluster: ' + str(len(set(OD_label['Label']))))
 # Plot Spatial
 poly = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Divvy_Station.shp')
 poly = poly.merge(OD_label, on='from_stati')
-fig, ax = plt.subplots(figsize=(12, 8))
-poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.2, edgecolor='k',
-          markersize=poly['trip_id'] / (max(poly['trip_id']) / 400),
-          legend=False, legend_kwds={'bbox_to_anchor': (.3, 1.05), 'fontsize': 4, 'frameon': False}, ax=ax)
+bikeroute = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Bikeroute.shp')
+boundary = geopandas.GeoDataFrame.from_file(
+    r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Boundaries - City\geo_export_07e6fdf7-f530-46a9-b1bc-95b15607e039.shp')
+with plt.style.context(['science', 'ieee']):
+    fig, ax = plt.subplots()  # figsize=(10, 5)
+    # bikeroute.plot(ax=ax, color='green', linewidth=0.2, alpha=0.5)
+    boundary.boundary.plot(ax=ax, color='k', linewidth=0.2, alpha=1)
+    poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.1, edgecolor='k',
+              markersize=poly['trip_id'] / (max(poly['trip_id']) / 20), legend=False, ax=ax)
+    # ctx.add_basemap(ax)
+    fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\Community.jpg', dpi=600)
 # OD_Bike_Plot = Compare_trips[Compare_trips['Type'] == 2020].groupby(
 #     ['from_station_id', 'from_station_lon', 'from_station_lat', 'to_station_id', 'to_station_lon',
 #      'to_station_lat']).count()['trip_id'].reset_index()
@@ -182,7 +197,7 @@ poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.2, edgeco
 #                 arrowprops={'arrowstyle': '->',
 #                             'lw': OD_Bike_Plot.loc[kk, 'trip_id'] / (max(OD_Bike_Plot['trip_id']) / 5),
 #                             'color': 'orange', 'alpha': 0.5, 'connectionstyle': "arc3,rad=-0.4"}, va='center')
-plt.tight_layout()
+# plt.tight_layout()
 
 # Daily count
 alltrips['startyear'] = alltrips['starttime'].dt.year
@@ -282,33 +297,55 @@ All_ride.set_index('startdate', inplace=True)
 Rider_2019.set_index('startdate', inplace=True)
 
 # Plot the daily figure
-plt.rcParams.update({'font.size': 22, 'font.family': "Times New Roman"})
-fig, ax = plt.subplots(figsize=(14, 8))  # create a new figure with a default 111 subplot
-ax.plot(All_ride['trip_id'], color='#1b96f3', alpha=0.8, lw=1)
-ax.set_ylabel('Pickups')
-ax.set_xlabel('Date')
-ax.set_ylim(0, 3.5 * 1e4)
-ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+# plt.rcParams.update({'font.size': 22, 'font.family': "Times New Roman"})
+with plt.style.context(['science', 'ieee']):
+    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+    ax.plot(All_ride['trip_id'], alpha=0.6, lw=0.3)  # color='#1b96f3',
+    ax.set_ylabel('Pickups')
+    ax.set_xlabel('Date')
+    # ax.set_ylim(0, 3.5 * 1e4)
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
 
-axins = inset_axes(ax, 8, 1.8, loc=9)
-axins.plot(Rider_2019['trip_id'], '--', color='#1b96f3')
-axins.plot(All_ride['trip_id'], color='#1b96f3')
-axins.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
-axins.spines['top'].set_visible(False)
-axins.spines['right'].set_visible(False)
-axins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-axins.set_ylabel('Pickups')
-axins.legend(['2019', '2020'], frameon=False)
+    # axins = inset_axes(ax, 8, 1.8, loc=9)
+    # axins.plot(Rider_2019['trip_id'], '--')  # , color='#1b96f3'
+    # axins.plot(All_ride['trip_id'])  # , color='#1b96f3'
+    # axins.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
+    # axins.spines['top'].set_visible(False)
+    # axins.spines['right'].set_visible(False)
+    # axins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    # axins.set_ylabel('Pickups')
+    # axins.legend(['2019', '2020'], frameon=False)
 
-axtwins = axins.twinx()
-axtwins.yaxis.set_offset_position('right')
-axtwins.bar(cases.index, cases['cases'], color='#869ba0', alpha=0.5)
-axtwins.set_ylim(0, 2500)
-axtwins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
-axtwins.set_ylabel('Cases')
-mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#869ba0", lw=2, ls='--')
-plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
+    # axtwins = axins.twinx()
+    # axtwins.yaxis.set_offset_position('right')
+    # axtwins.bar(cases.index, cases['cases'], alpha=0.5)  # , color='#869ba0'
+    # axtwins.set_ylim(0, 2500)
+    # axtwins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    # axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+    # axtwins.set_ylabel('Cases')
+    # mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#869ba0", lw=2, ls='--')
+    # plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
 
-plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
-plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
+
+with plt.style.context(['science', 'ieee']):
+    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+    ax.plot(Rider_2019['trip_id'], lw=0.5)  # , color='#1b96f3'
+    ax.plot(All_ride['trip_id'], lw=0.5)  # , color='#1b96f3'
+    ax.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    ax.set_ylabel('Pickups')
+    ax.legend(['2019', '2020'], frameon=False)
+    ax.set_xlabel('Date')
+
+    axtwins = ax.twinx()
+    axtwins.yaxis.set_offset_position('right')
+    axtwins.bar(cases.index, cases['cases'], alpha=0.2)  # , color='#869ba0'
+    axtwins.set_ylim(0, 2500)
+    axtwins.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
+    axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+    axtwins.set_ylabel('Cases')
+
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.svg')
