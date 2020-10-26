@@ -79,6 +79,10 @@ print(len(set(Rider_2020['stationid'])))
 # For describe
 Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
         Impact_0101['Date'] >= datetime.datetime(2020, 3, 11))]['Cum_Relative_Impact'].describe()
+Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
+        Impact_0101['Date'] >= datetime.datetime(2020, 2, 1))]['Cum_Relative_Impact'].describe()
+# stats.trim_mean(Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
+#         Impact_0101['Date'] >= datetime.datetime(2020, 2, 1))]['Cum_Relative_Impact'], 0.05)
 
 # Plot relative impact
 with plt.style.context(['science', 'ieee']):

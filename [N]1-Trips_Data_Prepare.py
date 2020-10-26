@@ -51,12 +51,15 @@ alltrips.to_csv('alltrips.chicago_202007.csv')
 '''
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
 alltrips = pd.read_pickle(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All\alltrips_chicago_202007.pkl')
+# alltrips.sort_values(by='starttime')['starttime']
 raw_length = len(alltrips)
+# alltrips['starttime'].min()
 
 # Drop Outliers: Duration
 alltrips['Duration'] = (alltrips['stoptime'] - alltrips['starttime']).dt.total_seconds()
 alltrips = alltrips[(alltrips['Duration'] > 60) & (alltrips['Duration'] < 60 * 60 * 6)].reset_index(drop=True)
 print('Delete: ' + str(raw_length - len(alltrips)))
+1 - (raw_length - len(alltrips)) / len(alltrips)
 # sns.distplot(alltrips['Duration'])
 # Drop NA
 alltrips = alltrips.dropna().reset_index(drop=True)
@@ -91,7 +94,7 @@ Compare_trips['Distance'] = haversine_array(Compare_trips['from_station_lat'], C
 Compare_trips['Duration'] = Compare_trips['Duration'] / 60
 
 # Descibe: distance and duration
-Compare_trips.groupby('Type').describe().to_csv('Trip_Divvy_Des.csv')
+Compare_trips.groupby('Type').describe().to_csv('Trip_Divvy_Des1.csv')
 Compare_trips.loc[Compare_trips['usertype'] == 'Customer', 'usertype'] = 'casual'
 Compare_trips.loc[Compare_trips['usertype'] == 'Subscriber', 'usertype'] = 'member'
 Compare_trips.groupby(['usertype', 'Type']).count()
@@ -168,9 +171,25 @@ communities = OD_Graph.community_infomap(edge_weights='trip_id')
 authority_score = OD_Graph.authority_score(weights='trip_id')
 hub_score = OD_Graph.hub_score(weights='trip_id')
 OD_label = pd.DataFrame(
-    {'from_stati': OD_Graph.vs['name'], 'Label': communities.membership, 'Authority': authority_score,
-     'Hub': hub_score})
-print('No. of Cluster: ' + str(len(set(OD_label['Label']))))
+    {'from_stati': OD_Graph.vs['name'], 'Label_2019': communities.membership, 'Authority_2019': authority_score,
+     'Hub_2019': hub_score})
+print('No. of Cluster: ' + str(len(set(OD_label['Label_2019']))))
+
+# Community
+OD_Bike = Compare_trips[Compare_trips['Type'] == 2020].groupby(['from_station_id', 'to_station_id']).count()[
+    'trip_id'].reset_index()
+# OD_Bike = OD_Bike[OD_Bike['from_station_id'] != OD_Bike['to_station_id']]
+tuples = [tuple(x) for x in OD_Bike.values]
+OD_Graph = igraph.Graph.TupleList(tuples, directed=True, edge_attrs=['trip_id'])
+communities = OD_Graph.community_infomap(edge_weights='trip_id')
+authority_score = OD_Graph.authority_score(weights='trip_id')
+hub_score = OD_Graph.hub_score(weights='trip_id')
+OD_label_2020 = pd.DataFrame(
+    {'from_stati': OD_Graph.vs['name'], 'Label_2020': communities.membership, 'Authority_2020': authority_score,
+     'Hub_2020': hub_score})
+print('No. of Cluster: ' + str(len(set(OD_label_2020['Label_2020']))))
+
+OD_label.merge(OD_label_2020, on='from_stati').to_csv('Community_chicago.csv')
 
 # Plot Spatial
 poly = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Divvy_Station.shp')
