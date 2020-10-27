@@ -5,10 +5,14 @@ import datetime
 import matplotlib.pylab as plt
 import matplotlib.dates as mdates
 import seaborn as sns
-import geopandas as gpd
+import geopandas
 from scipy.stats import pearsonr
 import scipy.stats
 from scipy import stats
+import contextily as ctx
+import mapclassify
+from matplotlib_scalebar.scalebar import ScaleBar
+import geoplot as gplt
 
 os.chdir(r'D:\COVID19-Transit_Bikesharing\Divvy_Data')
 # plt.rcParams.update({'font.size': 24, 'font.family': "Times New Roman"})
@@ -183,4 +187,3 @@ All_final.describe().T.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Descri
 # Correlation
 All_final.groupby('from_stati').tail(1).corr().to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Corr.csv')
 
-# Travel features describe
