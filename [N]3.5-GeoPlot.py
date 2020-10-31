@@ -121,9 +121,9 @@ gplt.pointplot(Station_poly, scale='2020_size', limits=(4, 15), hue='Label_2020'
 ctx.add_basemap(ax2, source=ctx.providers.Stamen.TonerLite)
 plt.subplots_adjust(top=0.955, bottom=0.005, left=0.0, right=1.0, hspace=0.0, wspace=0.0)
 ax2.set_title('2020 Average Pickups')
-plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Spatial_Pickups-1.png', dpi=600)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Figure4-1.png', dpi=600)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Figure4-1.svg')
 # plt.tight_layout()
-
 
 fig = plt.figure(figsize=(7, 7))
 ax1 = plt.subplot(121, projection=gcrs.WebMercator())
@@ -158,5 +158,7 @@ gplt.pointplot(Station_poly[Station_poly['Cum_Relative_Impact'] >= 0], ax=ax2, *
 ctx.add_basemap(ax2, source=ctx.providers.Stamen.TonerLite)
 plt.subplots_adjust(top=0.955, bottom=0.005, left=0.0, right=1.0, hspace=0.0, wspace=0.0)
 ax2.set_title('Cumulative Relative Change (|-|)')
-plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Spatial_Changes-1.png', dpi=600)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Fig5-1.png', dpi=600)
+plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Fig5-1.svg')
+
 # plt.tight_layout()

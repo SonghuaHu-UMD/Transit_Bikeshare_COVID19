@@ -110,8 +110,8 @@ with plt.style.context(['science', 'ieee']):
     ax.set_xlabel('Date')
     ax.set_ylabel('Cumulative relative change')
     plt.tight_layout()
-    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3-te.png', dpi=600)
-    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG3-te.svg')
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG2.png', dpi=600)
+    plt.savefig('D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG2.svg')
 
 '''
 for jj in list(set(Rider_2020['stationid'])):

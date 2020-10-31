@@ -1,4 +1,4 @@
-pacman::p_load(corrplot,data.table,car, mgcv, psych, dplyr, mgcViz, spdep, sf, tmap, leaps, MASS, ggplot2, metR, gtsummary)
+pacman::p_load(ggthemes,ggsci,corrplot,data.table,car, mgcv, psych, dplyr, mgcViz, spdep, sf, tmap, leaps, MASS, ggplot2, metR, gtsummary)
 
 # Read data
 dat <- read.csv('D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\All_final_Divvy_R2019_1015.csv')
@@ -34,16 +34,19 @@ Need_Loop <- c("Prop.of.Male","Prop.of.Age_25_40",  "Prop.of.White", "Prop.of.As
               "Prop.of.Utilities.Jobs","Prop.of.Goods_Product.Jobs","Population.Density", "Job.Density", "Prop.of.Car","Prop.of.Transit",
                "Prop.of.Commercial","Prop.of.Industrial", "Prop.of.Institutional", "Prop.of.Openspace", "Prop.of.Residential",
                "Road.Density","Bike.Route.Density","Transit.Ridership","Distance.to.Nearest.Bike.Station",
-               "Distance.to.City.Center", "Capacity","No.of.Cases","Infection.Rate")
+               "Distance.to.City.Center", "Capacity","No.of.Cases","Infection.Rate","Prop.of.Black")
 dat_need <- dat[,Need_Loop]
+# var="Median.Income"
 for (var in Need_Loop){
   GAM_RES1 <- mgcv::bam(Cum_Relative_Impact ~ as.matrix(dat_need[,Need_Loop[Need_Loop!=var]])+
     dat$TMAX + dat$PRCP + ti(dat$lat, dat$lon) + s(dat$Week,k=5) + s(dat$from_stati,bs = 're') +
     s(dat$Time_Index, dat[,var]), data = dat, family = c("gaussian"), control = gam.control(trace = TRUE),
                         method = "fREML", discrete = TRUE, chunk.size=5000, nthreads = 150)
   b <- getViz(GAM_RES1,scheme = 1)
-  pl <- plot(b,select=4) + l_fitRaster(noiseup = TRUE) + l_fitContour(colour = 7,binwidth = 0.05) + l_rug() +
-    geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y=var,title ='') + theme(text = element_text(size=20))
+  pl <- plot(b,select=4) + l_fitRaster(noiseup = TRUE) + l_fitContour(colour = 1,binwidth = 0.05) + l_rug() +
+    scale_fill_distiller(palette = "RdBu")+ geom_text_contour(stroke = 0.2) + labs(x = "Time Index",y = var,title ='') +
+    theme(text = element_text(size=20, family="serif"))+labs(fill = "s(x)")
+  # ,limits =c(-0.6,0.6)
   print(pl, pages = 1)
   ggsave(paste(var,"_Control.png"), units="in", width=7, height=5, dpi=600)
   ggsave(paste(var,"_Control.svg"), units="in", width=7, height=5)}

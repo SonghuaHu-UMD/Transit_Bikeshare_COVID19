@@ -115,6 +115,7 @@ Compare_trips.groupby(['loop', 'Type']).count()
 # Temporal pattern
 def plot_temp_pattern(Type_Name):
     with plt.style.context(['science', 'ieee']):
+        plt.rcParams.update({'font.size': 8.5})
         hour_pattern = Compare_trips.groupby(['Type', Type_Name]).count().reset_index()
         fig, ax = plt.subplots()  # figsize=(7, 6)
         ax.plot(hour_pattern[hour_pattern['Type'] == 2019][Type_Name],
@@ -131,6 +132,7 @@ def plot_temp_pattern(Type_Name):
         # plt.tight_layout()
         fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\' + Type_Name + '.jpg', dpi=600)
         fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\' + Type_Name + '.svg')
+        plt.close()
 
 
 # plot_temp_pattern('Hour')
@@ -191,32 +193,32 @@ print('No. of Cluster: ' + str(len(set(OD_label_2020['Label_2020']))))
 
 OD_label.merge(OD_label_2020, on='from_stati').to_csv('Community_chicago.csv')
 
-# Plot Spatial
-poly = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Divvy_Station.shp')
-poly = poly.merge(OD_label, on='from_stati')
-bikeroute = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Bikeroute.shp')
-boundary = geopandas.GeoDataFrame.from_file(
-    r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Boundaries - City\geo_export_07e6fdf7-f530-46a9-b1bc-95b15607e039.shp')
-with plt.style.context(['science', 'ieee']):
-    fig, ax = plt.subplots()  # figsize=(10, 5)
-    # bikeroute.plot(ax=ax, color='green', linewidth=0.2, alpha=0.5)
-    boundary.boundary.plot(ax=ax, color='k', linewidth=0.2, alpha=1)
-    poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.1, edgecolor='k',
-              markersize=poly['trip_id'] / (max(poly['trip_id']) / 20), legend=False, ax=ax)
-    # ctx.add_basemap(ax)
-    fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\Community.jpg', dpi=600)
-# OD_Bike_Plot = Compare_trips[Compare_trips['Type'] == 2020].groupby(
-#     ['from_station_id', 'from_station_lon', 'from_station_lat', 'to_station_id', 'to_station_lon',
-#      'to_station_lat']).count()['trip_id'].reset_index()
-# OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['trip_id'] > 100].reset_index(drop=True)
-# OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['from_station_id'] != OD_Bike_Plot['to_station_id']]
-# for kk in range(0, len(OD_Bike_Plot)):
-#     ax.annotate('', xy=(OD_Bike_Plot.loc[kk, 'from_station_lon'], OD_Bike_Plot.loc[kk, 'from_station_lat']),
-#                 xytext=(OD_Bike_Plot.loc[kk, 'to_station_lon'], OD_Bike_Plot.loc[kk, 'to_station_lat']),
-#                 arrowprops={'arrowstyle': '->',
-#                             'lw': OD_Bike_Plot.loc[kk, 'trip_id'] / (max(OD_Bike_Plot['trip_id']) / 5),
-#                             'color': 'orange', 'alpha': 0.5, 'connectionstyle': "arc3,rad=-0.4"}, va='center')
-# plt.tight_layout()
+# # Plot Spatial
+# poly = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Divvy_Station.shp')
+# poly = poly.merge(OD_label, on='from_stati')
+# bikeroute = geopandas.GeoDataFrame.from_file(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\GIS\Bikeroute.shp')
+# boundary = geopandas.GeoDataFrame.from_file(
+#     r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Boundaries - City\geo_export_07e6fdf7-f530-46a9-b1bc-95b15607e039.shp')
+# with plt.style.context(['science', 'ieee']):
+#     fig, ax = plt.subplots()  # figsize=(10, 5)
+#     # bikeroute.plot(ax=ax, color='green', linewidth=0.2, alpha=0.5)
+#     boundary.boundary.plot(ax=ax, color='k', linewidth=0.2, alpha=1)
+#     poly.plot(column='Label', categorical=True, cmap='tab20c', linewidth=0.1, edgecolor='k',
+#               markersize=poly['trip_id'] / (max(poly['trip_id']) / 20), legend=False, ax=ax)
+#     # ctx.add_basemap(ax)
+#     fig.savefig(r'D:\\COVID19-Transit_Bikesharing\\Divvy_Data\\Results\\Community.jpg', dpi=600)
+# # OD_Bike_Plot = Compare_trips[Compare_trips['Type'] == 2020].groupby(
+# #     ['from_station_id', 'from_station_lon', 'from_station_lat', 'to_station_id', 'to_station_lon',
+# #      'to_station_lat']).count()['trip_id'].reset_index()
+# # OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['trip_id'] > 100].reset_index(drop=True)
+# # OD_Bike_Plot = OD_Bike_Plot[OD_Bike_Plot['from_station_id'] != OD_Bike_Plot['to_station_id']]
+# # for kk in range(0, len(OD_Bike_Plot)):
+# #     ax.annotate('', xy=(OD_Bike_Plot.loc[kk, 'from_station_lon'], OD_Bike_Plot.loc[kk, 'from_station_lat']),
+# #                 xytext=(OD_Bike_Plot.loc[kk, 'to_station_lon'], OD_Bike_Plot.loc[kk, 'to_station_lat']),
+# #                 arrowprops={'arrowstyle': '->',
+# #                             'lw': OD_Bike_Plot.loc[kk, 'trip_id'] / (max(OD_Bike_Plot['trip_id']) / 5),
+# #                             'color': 'orange', 'alpha': 0.5, 'connectionstyle': "arc3,rad=-0.4"}, va='center')
+# # plt.tight_layout()
 
 # Daily count
 alltrips['startyear'] = alltrips['starttime'].dt.year
@@ -345,8 +347,8 @@ with plt.style.context(['science', 'ieee']):
     # mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#869ba0", lw=2, ls='--')
     # plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
 
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.png', dpi=600)
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1.svg')
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.svg')
 
 with plt.style.context(['science', 'ieee']):
     fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
@@ -366,5 +368,5 @@ with plt.style.context(['science', 'ieee']):
     axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
     axtwins.set_ylabel('Cases')
 
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.png', dpi=600)
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.svg')
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2.svg')
