@@ -52,7 +52,7 @@ Station_poly.loc[Station_poly['2020_size_label'] == 4, '2020_size'] = 120
 Station_poly.loc[Station_poly['2020_size_label'] == 5, '2020_size'] = 160
 
 # Relative Change
-Station_poly_Positive = Station_poly[Station_poly['Cum_Relative_Impact'] > 0]
+Station_poly_Positive = Station_poly[Station_poly['Cum_Relative_Impact'] >= 0]
 Station_poly_Positive['Change_size_label'] = mapclassify.UserDefined(Station_poly_Positive['Cum_Relative_Impact'],
                                                                      bins=[0.15, 0.3, 0.45, 0.7, 1]).yb
 Station_poly_Positive.loc[Station_poly_Positive['Change_size_label'] == 0, 'Change_size'] = 5
@@ -92,7 +92,7 @@ Station_poly_Negative.loc[Station_poly_Negative['Change_size_label'] == 5, 'Chan
 
 
 boundary.total_bounds
-fig = plt.figure(figsize=(7, 7))
+fig = plt.figure(figsize=(7, 8))
 ax1 = plt.subplot(121, projection=gcrs.WebMercator())
 ax2 = plt.subplot(122, projection=gcrs.WebMercator())
 # ax1 = gplt.webmap(boundary, projection=gcrs.WebMercator())
@@ -119,25 +119,25 @@ gplt.pointplot(Station_poly, scale='2020_size', limits=(4, 15), hue='Label_2020'
 # gplt.kdeplot(Station_poly, projection=gcrs.AlbersEqualArea(), cmap='Reds', ax=ax2)
 # gplt.webmap(contiguous_usa, ax=ax, extent=extent)
 ctx.add_basemap(ax2, source=ctx.providers.Stamen.TonerLite)
-plt.subplots_adjust(top=0.955, bottom=0.005, left=0.0, right=1.0, hspace=0.0, wspace=0.0)
+plt.subplots_adjust(top=0.985, bottom=0.005, left=0.01, right=0.99, hspace=0.0, wspace=0.01)
 ax2.set_title('2020 Average Pickups')
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Figure4-1.png', dpi=600)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Figure4-1.svg')
 # plt.tight_layout()
 
-fig = plt.figure(figsize=(7, 7))
+fig = plt.figure(figsize=(7, 8))
 ax1 = plt.subplot(121, projection=gcrs.WebMercator())
 ax2 = plt.subplot(122, projection=gcrs.WebMercator())
 # ax1 = gplt.webmap(boundary, projection=gcrs.WebMercator())
 # gplt.sankey(bikeroute, ax=ax, color='black')
-gplt.pointplot(Station_poly_Positive, scale='Change_size', limits=(4, 15), color='#6e93d6', legend=True,
+gplt.pointplot(Station_poly[Station_poly['Cum_Relative_Impact'] < 0], ax=ax1, **pointplot_kwargs)
+gplt.pointplot(Station_poly_Positive, scale='Change_size', limits=(4, 15), color='#7eb8da', legend=True,
                legend_var='scale', linewidth=0.2, edgecolor='Blue',
                # extent=np.array([-87.80, 41.68454312, -87.5241371, 42.12303859]),
                legend_kwargs={'bbox_to_anchor': (0.65, 1), 'frameon': False},
                legend_values=[5, 20, 50, 90, 120, 150],
                legend_labels=['< 0.15', '0.15 - 0.3', '0.3 - 0.45', '0.45 - 0.7', '0.7 - 1', '> 1'], ax=ax1)
 pointplot_kwargs = {"facecolor": 'none', "edgecolor": 'k', 's': 2, "linewidth": 0.4, 'color': 'none'}
-gplt.pointplot(Station_poly[Station_poly['Cum_Relative_Impact'] <= 0], ax=ax1, **pointplot_kwargs)
 # gplt.polyplot(boundary, ax=ax1)
 # gplt.kdeplot(Station_poly, projection=gcrs.AlbersEqualArea(), cmap='Reds', ax=ax1)
 # gplt.webmap(contiguous_usa, ax=ax, extent=extent)
@@ -146,7 +146,7 @@ ax1.set_title('Cumulative Relative Change (+)')
 
 # ax2 = gplt.webmap(boundary, projection=gcrs.WebMercator())
 # gplt.sankey(bikeroute, ax=ax, color='black')
-gplt.pointplot(Station_poly_Negative, scale='Change_size', limits=(4, 15), color='#6e93d6', legend=True,
+gplt.pointplot(Station_poly_Negative, scale='Change_size', limits=(4, 15), color='#7eb8da', legend=True,
                legend_var='scale', linewidth=0.2, edgecolor='Blue',
                legend_kwargs={'bbox_to_anchor': (0.65, 1), 'frameon': False},
                legend_values=[5, 20, 50, 90, 120, 150],
@@ -156,7 +156,7 @@ gplt.pointplot(Station_poly[Station_poly['Cum_Relative_Impact'] >= 0], ax=ax2, *
 # gplt.kdeplot(Station_poly, projection=gcrs.AlbersEqualArea(), cmap='Reds', ax=ax2)
 # gplt.webmap(contiguous_usa, ax=ax, extent=extent)
 ctx.add_basemap(ax2, source=ctx.providers.Stamen.TonerLite)
-plt.subplots_adjust(top=0.955, bottom=0.005, left=0.0, right=1.0, hspace=0.0, wspace=0.0)
+plt.subplots_adjust(top=0.985, bottom=0.005, left=0.01, right=0.99, hspace=0.0, wspace=0.01)
 ax2.set_title('Cumulative Relative Change (|-|)')
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Fig5-1.png', dpi=600)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Fig5-1.svg')
