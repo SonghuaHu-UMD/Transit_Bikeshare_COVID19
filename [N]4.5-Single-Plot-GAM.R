@@ -20,12 +20,10 @@ dat_need <- dat[,Need_Loop]
 
 # Transit control
 var = "Transit.Ridership"
-#dat[(dat$Transit.Ridership>40)&(dat$Time_Index>50),"Cum_Relative_Impact"] <-
-#  dat[(dat$Transit.Ridership>40)&(dat$Time_Index>50),"Cum_Relative_Impact"]+0.05
-dat[(dat$Transit.Ridership>100)&(dat$Time_Index<=10),"Cum_Relative_Impact"] <-
-  dat[(dat$Transit.Ridership>100)&(dat$Time_Index<=10),"Cum_Relative_Impact"]*0.8
-dat[(dat$Transit.Ridership<30)&(dat$Time_Index<=10),"Cum_Relative_Impact"] <-
-  dat[(dat$Transit.Ridership<30)&(dat$Time_Index<=10),"Cum_Relative_Impact"]*1.2
+#dat[(dat$Transit.Ridership>100)&(dat$Time_Index<=10),"Cum_Relative_Impact"] <-
+#  dat[(dat$Transit.Ridership>100)&(dat$Time_Index<=10),"Cum_Relative_Impact"]*0.8
+#dat[(dat$Transit.Ridership<30)&(dat$Time_Index<=10),"Cum_Relative_Impact"] <-
+#  dat[(dat$Transit.Ridership<30)&(dat$Time_Index<=10),"Cum_Relative_Impact"]*1.2
 GAM_RES1 <- mgcv::bam(Cum_Relative_Impact ~ as.matrix(dat_need[,Need_Loop[Need_Loop!=var]])+
   dat$TMAX + dat$PRCP + ti(dat$lat, dat$lon) + s(dat$Week,k=5) + s(dat$from_stati,bs = 're') +
   s(dat$Time_Index, dat[,var]), data = dat, family = c("gaussian"), control = gam.control(trace = TRUE),
@@ -56,6 +54,10 @@ ggsave(paste(var,"_ControlNO.svg"), units="in", width=7, height=5)
 
 # White Asian Black control
 var = "Prop.of.White"
+#dat[(dat$Prop.of.White>0.7)&(dat$Time_Index<=-10),"Cum_Relative_Impact"] <-
+#  dat[(dat$Prop.of.White>0.7)&(dat$Time_Index<=-10),"Cum_Relative_Impact"]*1.5
+#dat[(dat$Prop.of.White<0.5)&(dat$Time_Index<=-10),"Cum_Relative_Impact"] <-
+#  dat[(dat$Prop.of.White<0.5)&(dat$Time_Index<=-10),"Cum_Relative_Impact"]*0.8
 GAM_RES1 <- mgcv::bam(Cum_Relative_Impact ~ as.matrix(dat_need[,Need_Loop[Need_Loop!=var]])+
   dat$TMAX + dat$PRCP + ti(dat$lat, dat$lon) + s(dat$Week,k=5) + s(dat$from_stati,bs = 're') +
   s(dat$Time_Index, dat[,var]), data = dat, family = c("gaussian"), control = gam.control(trace = TRUE),
