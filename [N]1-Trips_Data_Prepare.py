@@ -235,7 +235,7 @@ Day_count = alltrips.groupby(['from_station_id', 'startdate']).count()['trip_id'
 Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 # Range the date
 Day_count = Day_count.set_index('startdate').groupby(['from_station_id']).resample('d')[
-    ['trip_id']].asfreq().reset_index()
+    ['trip_id']].asfreq().reset_index()#
 Day_count = Day_count.sort_values(by=['from_station_id', 'startdate'])
 # Day_count.isnull().sum()
 Day_count = Day_count.fillna(0)

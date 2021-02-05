@@ -256,3 +256,29 @@ sns.heatmap(All_final.corr(), fmt='',
             square=True, xticklabels=True, yticklabels=True, linewidths=.5)
 plt.tight_layout()
 plt.savefig('CORR_Divvy.svg')
+
+# Compare with 2019
+ridership_old = pd.read_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Day_count_Divvy_dropOutlier.csv', index_col=0)
+# ridership_old = pd.read_pickle(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Trips_All\alltrips_chicago_202007.pkl')
+ridership_old['Date'] = pd.to_datetime(ridership_old['startdate'])
+ridership_old_2019 = ridership_old[(ridership_old['Date'] >= datetime.datetime(2019, 1, 1)) & (
+        ridership_old['Date'] <= datetime.datetime(2019, 12, 31))]
+ridership_old_2019 = ridership_old_2019.groupby(['Date']).sum()['trip_id'].reset_index()
+# ridership_old_2019['weekofyear'] = ridership_old_2019['Date'].dt.weekofyear
+# ridership_old_2019 = ridership_old_2019.groupby('weekofyear').sum().reset_index()
+ridership_old_2019.columns = ['Date', 'trips_2019']
+
+ridership_old_2020 = ridership_old[(ridership_old['Date'] >= datetime.datetime(2020, 1, 1)) & (
+        ridership_old['Date'] <= datetime.datetime(2020, 12, 31))]
+ridership_old_2020 = ridership_old_2020.groupby(['Date']).sum()['trip_id'].reset_index()
+# ridership_old_2020['weekofyear'] = ridership_old_2020['Date'].dt.weekofyear
+# ridership_old_2020 = ridership_old_2020.groupby('weekofyear').sum().reset_index()
+ridership_old_2020.columns = ['Date', 'trips_2020']
+ridership_old_2020['trips_2019'] = ridership_old_2019['trips_2019']
+plt.plot(ridership_old_2020['trips_2020'] / ridership_old_2020['trips_2019'])
+
+ridership_old['Baseline_Mobility'] = \
+    ridership_old.loc[ridership_old['Date'] == datetime.datetime(2020, 1, 13), 'trip_id'].values[0]
+ridership_old['Mobility'] = (ridership_old['trip_id'] / ridership_old['Baseline_Mobility']) * 100
+ridership_old['Type'] = 'Bikesharing'
+ridership_old = ridership_old[['Date', 'Type', 'Mobility']]
