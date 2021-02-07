@@ -88,6 +88,18 @@ Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
 # stats.trim_mean(Impact_0101[(Impact_0101['Date'] <= datetime.datetime(2020, 7, 31)) & (
 #         Impact_0101['Date'] >= datetime.datetime(2020, 2, 1))]['Cum_Relative_Impact'], 0.05)
 
+# Calculate the monthly pickups
+monthly_avg = Rider_2020.groupby(['Month']).sum()[['Response', 'Reference']]
+monthly_avg['point.effect'] = monthly_avg['Response'] - monthly_avg['Reference']
+monthly_avg['Cum_effect'] = monthly_avg['point.effect'].cumsum()
+monthly_avg['Cum_Response'] = monthly_avg['Response'].cumsum()
+monthly_avg['Cum_Reference'] = monthly_avg['Reference'].cumsum()
+monthly_avg['Cum_Relative_Impact'] = (monthly_avg['Cum_Response'] - monthly_avg['Cum_Reference']) / monthly_avg[
+    'Cum_Reference']
+monthly_avg = monthly_avg[['Response', 'Reference', 'point.effect', 'Cum_effect', 'Cum_Relative_Impact']]
+monthly_avg.columns = ['Pickups in 2020', 'Pickups in 2019', 'Pointwise Change', 'Cumulative Change',
+                       'Cumulative Relative Change']
+monthly_avg.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\changes.csv')
 # Plot relative impact
 with plt.style.context(['science', 'ieee']):
     # sns.set_palette(sns.color_palette("GnBu_d"))
@@ -186,4 +198,3 @@ All_final.describe().T.to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Descri
 
 # Correlation
 All_final.groupby('from_stati').tail(1).corr().to_csv(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Divvy_Corr.csv')
-

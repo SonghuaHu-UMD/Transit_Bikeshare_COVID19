@@ -235,7 +235,7 @@ Day_count = alltrips.groupby(['from_station_id', 'startdate']).count()['trip_id'
 Day_count['startdate'] = pd.to_datetime(Day_count['startdate'])
 # Range the date
 Day_count = Day_count.set_index('startdate').groupby(['from_station_id']).resample('d')[
-    ['trip_id']].asfreq().reset_index()#
+    ['trip_id']].asfreq().reset_index()  #
 Day_count = Day_count.sort_values(by=['from_station_id', 'startdate'])
 # Day_count.isnull().sum()
 Day_count = Day_count.fillna(0)
@@ -320,8 +320,9 @@ Rider_2019.set_index('startdate', inplace=True)
 # Plot the daily figure
 # plt.rcParams.update({'font.size': 22, 'font.family': "Times New Roman"})
 with plt.style.context(['science', 'ieee']):
-    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-    ax.plot(All_ride['trip_id'], alpha=0.6, lw=0.3)  # color='#1b96f3',
+    fig, ax = plt.subplots(figsize=(5, 3))
+    # fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+    ax.plot(All_ride['trip_id'], alpha=0.6, lw=0.6)  # color='#1b96f3',
     ax.set_ylabel('Pickups')
     ax.set_xlabel('Date')
     # ax.set_ylim(0, 3.5 * 1e4)
@@ -347,13 +348,13 @@ with plt.style.context(['science', 'ieee']):
     # mark_inset(ax, axins, loc1=1, loc2=1, fc="none", ec="#869ba0", lw=2, ls='--')
     # plt.subplots_adjust(top=0.951, bottom=0.088, left=0.067, right=0.987, hspace=0.225, wspace=0.2)
 
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.png', dpi=600)
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1.svg')
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1-1.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-1-1.svg')
 
 with plt.style.context(['science', 'ieee']):
-    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-    ax.plot(Rider_2019['trip_id'], lw=0.5)  # , color='#1b96f3'
-    ax.plot(All_ride['trip_id'], lw=0.5)  # , color='#1b96f3'
+    fig, ax = plt.subplots(figsize=(5, 3))  # create a new figure with a default 111 subplot
+    ax.plot(Rider_2019['trip_id'], '-o', markersize=2, lw=0.5)  # , color='#1b96f3'
+    ax.plot(All_ride['trip_id'], '--o', markersize=2, lw=0.5)  # , color='#1b96f3'
     ax.set_xlim(datetime.datetime(2020, 2, 1), datetime.datetime(2020, 7, 30))
     ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
     ax.set_ylabel('Pickups')
@@ -368,5 +369,5 @@ with plt.style.context(['science', 'ieee']):
     axtwins.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
     axtwins.set_ylabel('Cases')
 
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2.png', dpi=600)
-    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2.svg')
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2-1.png', dpi=600)
+    plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG1-2-1.svg')

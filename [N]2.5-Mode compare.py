@@ -16,8 +16,8 @@ plt.rcParams.update(
      'ytick.minor.visible': True, 'ytick.right': True, 'axes.linewidth': 0.5, 'grid.linewidth': 0.5,
      'lines.linewidth': 1.5, 'legend.frameon': False, 'savefig.bbox': 'tight', 'savefig.pad_inches': 0.05})
 mpl.rcParams['axes.prop_cycle'] = \
-    mpl.cycler('color', ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE',
-                         '#AA3377', '#BBBBBB', '#000000'])
+    mpl.cycler('color', ['#4477AA', '#EE6677', '#228833', '#BBBBBB', '#66CCEE',
+                         '#AA3377', '#CCBB44', '#000000'])
 l_styles = ['-', '--', '-.']  # , ':' , '-.'
 m_styles = ['o', '^', '*', '.', ]
 
@@ -65,9 +65,11 @@ Human_mobility_Apple['Type'] = Human_mobility_Apple['Type'].str.title()
 # Read Safegraph # All_County_Visit_POI.pkl
 Human_mobility = pd.read_pickle(data_path + 'SafeGraph\\All_County_Metrics.pkl')
 Human_mobility = Human_mobility[Human_mobility['CTFIPS'] == '17031'].reset_index(drop=True)
-Human_mobility['Daily_Visits_no_parent'] = Human_mobility['OutFlow'] + Human_mobility['InFlow'] + Human_mobility['IntraFlow']
+Human_mobility['Daily_Visits_no_parent'] = Human_mobility['OutFlow'] + Human_mobility['InFlow'] + Human_mobility[
+    'IntraFlow']
 Human_mobility['Date'] = pd.to_datetime(Human_mobility['Date'])
-Human_mobility = Human_mobility.groupby(['CTFIPS', 'Date']).sum()['Daily_Visits_no_parent'].reset_index() # Daily_Visits_no_parent
+Human_mobility = Human_mobility.groupby(['CTFIPS', 'Date']).sum()[
+    'Daily_Visits_no_parent'].reset_index()  # Daily_Visits_no_parent
 # Baseline: 2020-01-13
 Human_mobility['Baseline_Mobility'] = Human_mobility.loc[
     Human_mobility['Date'] == datetime.datetime(2020, 1, 13), 'Daily_Visits_no_parent'].values[0]
@@ -89,7 +91,7 @@ ridership_old_2020 = ridership_old_2020.groupby(['Date']).sum()['trip_id'].reset
 ridership_old_2020['Baseline_Mobility'] = \
     ridership_old_2020.loc[ridership_old_2020['Date'] == datetime.datetime(2020, 1, 13), 'trip_id'].values[0]
 ridership_old_2020['Mobility'] = (ridership_old_2020['trip_id'] / ridership_old_2020['Baseline_Mobility']) * 100
-ridership_old_2020['Type'] = 'Bikesharing (Divvy)'
+ridership_old_2020['Type'] = 'Bike-sharing (Divvy)'
 ridership_old_2020 = ridership_old_2020[['Date', 'Type', 'Mobility']]
 # plt.plot(ridership_old['Date'], ridership_old['Mobility'], '-o')
 
@@ -110,12 +112,13 @@ Human_mobility_All = Human_mobility_All[(Human_mobility_All['Date'] >= datetime.
         Human_mobility_All['Date'] <= datetime.datetime(2020, 7, 31))]
 # Human_mobility_All['weekofyear'] = Human_mobility_All['Date'].dt.weekofyear
 Human_mobility_All.set_index('Date', inplace=True)
+
 # Human_mobility_All = Human_mobility_All.groupby(['Type', 'weekofyear']).mean().reset_index()
 # Human_mobility_All.set_index('weekofyear', inplace=True)
 fig, ax = plt.subplots(figsize=(10, 6))
 ccount = 0
 # set(Human_mobility_All['Type'])
-for type in ['All travel (SafeGraph)', 'Bikesharing (Divvy)', 'Driving (Apple)', 'Transit (Apple)', 'Walking (Apple)']:
+for type in ['All travel (SafeGraph)', 'Bike-sharing (Divvy)', 'Driving (Apple)', 'Transit (Apple)', 'Walking (Apple)']:
     temp = Human_mobility_All[Human_mobility_All['Type'] == type]
     ax.plot(temp['Mobility'], linestyle=l_styles[ccount % len(l_styles)], marker=m_styles[ccount // len(l_styles)],
             markersize=4, label=type, markevery=2)
@@ -126,7 +129,14 @@ plt.plot([datetime.datetime(2020, 1, 13), datetime.datetime(2020, 1, 13)], [0, 3
 plt.ylabel('Relative Mobility Ratio')
 plt.tight_layout()
 plt.legend(loc=2, ncol=3)
-plt.text(0.105, 0.05, 'Baseline: Jan. 13th, 2020', horizontalalignment='left', verticalalignment='center',
+plt.text(0.105, 0.05, 'Baseline: Jan-13, 2020', horizontalalignment='left', verticalalignment='center',
          transform=ax.transAxes)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG-NEW.png', dpi=600)
 plt.savefig(r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\FIG-NEW.svg')
+
+# Describe
+Human_mobility_All = Human_mobility_All.reset_index()
+Human_mobility_All['Month'] = Human_mobility_All['Date'].dt.month
+Human_mobility_All_Month = Human_mobility_All.groupby(['Type', 'Month']).mean().reset_index()
+Human_mobility_All_Month.pivot(index='Month', columns='Type', values='Mobility').to_csv(
+    r'D:\COVID19-Transit_Bikesharing\Divvy_Data\Results\Modes.csv')
