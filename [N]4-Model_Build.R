@@ -83,8 +83,8 @@ GAM_RES1 <- mgcv::gam(X2019_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.W
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
 GAM_RES1_S<-summary(GAM_RES1)
-write.csv(GAM_RES1_S$p.table, file = '2019_AVG_GAM_Linear.csv')
-write.csv(GAM_RES1_S$s.table, file = '2019_AVG_GAM_NONLinear.csv')
+write.csv(GAM_RES1_S$p.table, file = 'data/2019_AVG_GAM_Linear.csv')
+write.csv(GAM_RES1_S$s.table, file = 'data/2019_AVG_GAM_NONLinear.csv')
 
 # 2020 Average Pickup Model
 GAM_RES11 <- mgcv::gam(X2020_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
@@ -93,8 +93,8 @@ GAM_RES11 <- mgcv::gam(X2020_Avg ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + No.of.Cases + ti(lat, lon), data = dat_avg, family = c("nb"), method = "REML")
 GAM_RES11_S<-summary(GAM_RES11)
-write.csv(GAM_RES11_S$p.table, file = '2020_AVG_GAM_Linear.csv')
-write.csv(GAM_RES11_S$s.table, file = '2020_AVG_GAM_NONLinear.csv')
+write.csv(GAM_RES11_S$p.table, file = 'data/2020_AVG_GAM_Linear.csv')
+write.csv(GAM_RES11_S$s.table, file = 'data/2020_AVG_GAM_NONLinear.csv')
 
 # The Accumulative Relative Drop Model
 GAM_RES2 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  + Prop.of.White + Prop.of.Asian + Median.Income +
@@ -103,8 +103,8 @@ GAM_RES2 <- mgcv::gam(Cum_Relative_Impact ~  Prop.of.Male + Prop.of.Age_25_40  +
   Road.Density + Bike.Route.Density  + Transit.Ridership  + Distance.to.Nearest.Bike.Station +
   Capacity + No.of.Cases  + ti(lat, lon), data = dat_avg, family = c("gaussian"), method = "REML")
 GAM_RES2_S<-summary(GAM_RES2)
-write.csv(GAM_RES2_S$p.table, file = 'Relat_AVG_GAM_Linear.csv')
-write.csv(GAM_RES2_S$s.table, file = 'Relat_AVG_GAM_NONLinear.csv')
+write.csv(GAM_RES2_S$p.table, file = 'data/Relat_AVG_GAM_Linear.csv')
+write.csv(GAM_RES2_S$s.table, file = 'data/Relat_AVG_GAM_NONLinear.csv')
 
 # Start to Drop Date Model
 dat_start <- dat[dat$Date == '2020-03-10',]
