@@ -224,18 +224,7 @@ slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(x=corr_matr
 plt.text(0.7, 0.9, '$R^2 = $' + str(round(r_value ** 2, 3)), horizontalalignment='center',
          verticalalignment='center', transform=ax[0][0].transAxes)
 
-colnames(dat)
-vif_test <-
-  lm(Relative_Impact ~ Pct.Male + Pct.Age_0_24 + Pct.Age_25_40 + Pct.Age_40_65 + Pct.White + Pct.Black + Pct.Asian +
-       Income + College + Pct.Car + Pct.BikeWalk + Pct.WorkHome + Cumu_Cases + Cumu_Death +
-    COMMERCIAL + INDUSTRIAL + INSTITUTIONAL + OPENSPACE + RESIDENTIAL + Primary + Secondary + Minor + Bike_Route +
-    Pct.WJob_Utilities + Pct.WJob_Goods_Product + WTotal_Job_Density + Bus_stop_count + boardings  +
-    Distance_Busstop + Rail_stop_count + rides + Distance_Rail  + Near_Bike_Capacity +
-    Distance_Bikestation + Near_bike_pickups + Distance_City + PopDensity + capacity,
-     data = dat
-  )
-vif(vif_test)
-summary(vif_test)
+# R scratch code preserved in vif_scratch.R.
 
 All_final1 = All_final.groupby(['from_stati']).tail(1)
 All_final1.columns

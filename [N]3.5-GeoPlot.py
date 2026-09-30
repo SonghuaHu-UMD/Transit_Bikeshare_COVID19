@@ -130,6 +130,7 @@ ax1 = plt.subplot(121, projection=gcrs.WebMercator())
 ax2 = plt.subplot(122, projection=gcrs.WebMercator())
 # ax1 = gplt.webmap(boundary, projection=gcrs.WebMercator())
 # gplt.sankey(bikeroute, ax=ax, color='black')
+pointplot_kwargs = {"facecolor": 'none', "edgecolor": 'k', 's': 2, "linewidth": 0.4, 'color': 'none'}
 gplt.pointplot(Station_poly[Station_poly['Cum_Relative_Impact'] < 0], ax=ax1, **pointplot_kwargs)
 gplt.pointplot(Station_poly_Positive, scale='Change_size', limits=(4, 15), color='#7eb8da', legend=True,
                legend_var='scale', linewidth=0.2, edgecolor='Blue',
@@ -137,7 +138,6 @@ gplt.pointplot(Station_poly_Positive, scale='Change_size', limits=(4, 15), color
                legend_kwargs={'bbox_to_anchor': (0.65, 1), 'frameon': False},
                legend_values=[5, 20, 50, 90, 120, 150],
                legend_labels=['< 0.15', '0.15 - 0.3', '0.3 - 0.45', '0.45 - 0.7', '0.7 - 1', '> 1'], ax=ax1)
-pointplot_kwargs = {"facecolor": 'none', "edgecolor": 'k', 's': 2, "linewidth": 0.4, 'color': 'none'}
 # gplt.polyplot(boundary, ax=ax1)
 # gplt.kdeplot(Station_poly, projection=gcrs.AlbersEqualArea(), cmap='Reds', ax=ax1)
 # gplt.webmap(contiguous_usa, ax=ax, extent=extent)

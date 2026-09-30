@@ -87,7 +87,7 @@ for jj in set(Results_All['stationid']):
 # Calculate the casual impact
 # For build the GAM model
 Impact = pd.pivot_table(Results_All, values='Value', index=['Date', 'stationid'], columns=['Component']).reset_index()
-del Results_All
+# Keep Results_All: residual and station plots below still use it.
 Impact_0312 = Impact[Impact['Date'] >= datetime.datetime(2020, 3, 13)]
 Impact_0312 = Impact_0312.sort_values(by=['stationid', 'Date']).reset_index(drop=True)
 Impact_0312.columns
@@ -224,7 +224,8 @@ Results_All_Res['MAPE'] = abs(
     (Results_All_Res['Response'] - Results_All_Res['Predict']) / (Results_All_Res['Response']))
 Results_All_Res = Results_All_Res.replace([np.inf, -np.inf], np.nan)
 Results_All_Res.isnull().sum()
-Results_All_Res = Results_All_Res.fillna(0)
+# Undefined errors remain missing; they must not count as perfect predictions.
+print("Undefined MAPE observations:", Results_All_Res['MAPE'].isna().sum())
 Results_All_Res.describe()
 Results_All_Res.groupby(['stationid']).median()['MAPE'].min()
 Results_All_Res.groupby(['stationid']).median()['MAPE'].max()
